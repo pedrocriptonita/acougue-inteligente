@@ -1,0 +1,93 @@
+# ============================================================
+#  AÇOUGUE INTELIGENTE — Infraestrutura VPS
+#  N8N (orquestração) + Evolution API (WhatsApp) + Postgres
+#
+#  Uso:
+#    1. Copie infra/.env.example para infra/.env e preencha
+#    2. docker compose -f infra/docker-compose.yml up -d
+#    3. Configure o nginx (infra/nginx/) com HTTPS via Certbot
+# ============================================================
+
+services:
+  # ---------- Banco local (estado do N8N e da Evolution API) ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ai_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------- N8N: orquestração dos workflows ----------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: ai_n8n
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PROTOCOL: https
+      N8N_PORT: 5678
+      WEBHOOK_URL: https://${N8N_HOST}/
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+    ports:
+      - "127.0.0.1:5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - ai_net
+
+  # ---------- Evolution API: gateway do WhatsApp ----------
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: ai_evolution
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_URL: https://${EVOLUTION_HOST}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=evolution
+      # Webhook global apontando para o N8N (configurado na Fase 3)
+      WEBHOOK_GLOBAL_URL: https://${N8N_HOST}/webhook/wpp-incoming
+      WEBHOOK_GLOBAL_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - evolution_data:/evolution/instances
+    networks:
+      - ai_net
+
+volumes:
+  postgres_data:
+  n8n_data:
+  evolution_data:
+
+networks:
+  ai_net:
+    driver: bridge

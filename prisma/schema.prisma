@@ -1,0 +1,246 @@
+// ============================================================================
+//  AÇOUGUE INTELIGENTE — Schema Prisma (PostgreSQL / Supabase)
+//  Baseado no PRD v1.0 — MVP de Pedidos Automatizados via WhatsApp
+//
+//  Convenções:
+//   - Campos em camelCase no Prisma, mapeados para snake_case no banco (@map).
+//   - Todas as tabelas operacionais carregam `lojaId` (isolamento multi-tenant).
+//   - Soft delete via `deletedAt` nas entidades duráveis (Loja, Usuario,
+//     Cliente, Pedido). NÃO há soft delete em ItemPedido (vida atrelada ao
+//     Pedido) nem em Conversa (estado efêmero da IA).
+//
+//  IMPORTANTE (soft delete): o Prisma não filtra `deletedAt` automaticamente.
+//  Use uma Prisma Client Extension / middleware para excluir registros com
+//  `deletedAt != null` das consultas, ou filtre manualmente (where deletedAt: null).
+//
+//  IMPORTANTE (Supabase): habilite Row Level Security (RLS) em todas as
+//  tabelas, criando políticas que restringem o acesso por `loja_id`.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+//  ENUMS
+// ============================================================================
+
+/// Perfis de acesso ao painel administrativo (sem hierarquia complexa no MVP).
+enum PerfilUsuario {
+  ADMIN // Dono do açougue: gerencia a loja e usuários.
+  FUNCIONARIO // Açougueiro: separa pedidos e atualiza status.
+}
+
+/// Plano de assinatura SaaS da loja (preparado para cobrança futura).
+enum PlanoAssinatura {
+  TRIAL
+  MENSAL
+  ANUAL
+}
+
+/// Ciclo de vida operacional de um pedido.
+enum StatusPedido {
+  AGUARDANDO_PREPARO // Status inicial após confirmação do cliente.
+  PRONTO // "Pronto para Retirada" — dispara notificação ao cliente.
+  CONCLUIDO // Cliente retirou e pagou no balcão.
+  CANCELADO // Pedido cancelado (cliente desistiu ou erro).
+}
+
+/// Unidade de medida dos itens de carne.
+enum UnidadeMedida {
+  KG
+  G
+  PECA
+}
+
+/// Estado da sessão de conversa conduzida pela IA.
+enum StatusConversa {
+  COLETANDO // IA ainda coletando/validando os dados do pedido.
+  AGUARDANDO_CONFIRMACAO // Pedido montado, esperando o "sim" do cliente.
+  HUMANO // Fallback: encaminhada para atendimento humano.
+  CONCLUIDA // Pedido criado a partir desta conversa.
+  EXPIRADA // Rascunho abandonado / expirado por inatividade.
+}
+
+// ============================================================================
+//  MODELS
+// ============================================================================
+
+/// Loja (tenant). Cada açougue é um inquilino isolado da plataforma SaaS.
+/// É a raiz do multi-tenant: usuários, clientes, pedidos e conversas
+/// pertencem sempre a uma loja.
+model Loja {
+  id               String          @id @default(uuid()) @db.Uuid
+  nome             String
+  /// Número do WhatsApp conectado à Evolution API (único na plataforma).
+  telefoneWhatsapp String          @unique @map("telefone_whatsapp")
+  plano            PlanoAssinatura @default(TRIAL)
+  /// Permite suspender a operação da loja sem excluí-la.
+  ativo            Boolean         @default(true)
+
+  // Relacionamentos (1 loja → N de cada entidade)
+  usuarios  Usuario[]
+  clientes  Cliente[]
+  pedidos   Pedido[]
+  conversas Conversa[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  @@index([deletedAt])
+  @@map("lojas")
+}
+
+/// Usuário do painel administrativo (Admin ou Funcionário).
+/// `authUserId` espelha o ID do usuário no Supabase Auth (auth.users.id),
+/// mantendo o perfil de aplicação desacoplado da autenticação.
+model Usuario {
+  id         String        @id @default(uuid()) @db.Uuid
+  /// Vínculo 1:1 com o usuário do Supabase Auth.
+  authUserId String        @unique @map("auth_user_id") @db.Uuid
+  lojaId     String        @map("loja_id") @db.Uuid
+  nome       String
+  email      String        @unique
+  perfil     PerfilUsuario @default(FUNCIONARIO)
+
+  // Relacionamento: muitos usuários pertencem a uma loja.
+  loja Loja @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  @@index([lojaId])
+  @@index([deletedAt])
+  @@map("usuarios")
+}
+
+/// Cliente final do açougue (cadastro leve, opcional).
+/// Identificado pelo telefone dentro de cada loja. Serve para reconhecer
+/// clientes recorrentes; os dados também ficam "congelados" no Pedido.
+model Cliente {
+  id       String @id @default(uuid()) @db.Uuid
+  lojaId   String @map("loja_id") @db.Uuid
+  nome     String
+  telefone String
+
+  // Relacionamentos
+  loja    Loja     @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  pedidos Pedido[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  // Um mesmo telefone só existe uma vez por loja.
+  @@unique([lojaId, telefone])
+  @@index([lojaId])
+  @@index([deletedAt])
+  @@map("clientes")
+}
+
+/// Pedido de carnes para retirada no balcão.
+/// Os campos `nomeCliente`/`telefoneCliente` são um snapshot no momento do
+/// pedido (usado na comanda impressa), independente de alterações posteriores
+/// no cadastro do Cliente. O vínculo `clienteId` é opcional.
+model Pedido {
+  id     String @id @default(uuid()) @db.Uuid
+  lojaId String @map("loja_id") @db.Uuid
+  /// Cliente cadastrado (opcional — nem todo pedido vincula a um cadastro).
+  clienteId String? @map("cliente_id") @db.Uuid
+
+  /// Número sequencial POR LOJA exibido ao cliente (ex.: #145).
+  /// Deve ser gerado de forma atômica na aplicação (sequence dedicada por
+  /// loja ou transação com lock); o banco apenas garante a unicidade.
+  numero Int
+
+  // Snapshot dos dados do cliente no momento do pedido (para a comanda).
+  nomeCliente     String @map("nome_cliente")
+  telefoneCliente String @map("telefone_cliente")
+
+  /// Horário de retirada flexível: hora fixa ("18:00") ou "ao ficar pronto".
+  retirada String
+
+  status   StatusPedido @default(AGUARDANDO_PREPARO)
+  /// Indica se a comanda foi impressa com sucesso (painel é a fonte da verdade).
+  impresso Boolean      @default(false)
+
+  // Marcos de tempo do ciclo do pedido.
+  impressoEm  DateTime? @map("impresso_em")
+  prontoEm    DateTime? @map("pronto_em")
+  concluidoEm DateTime? @map("concluido_em")
+
+  // Relacionamentos
+  loja    Loja         @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  cliente Cliente?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  itens   ItemPedido[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  // Número sequencial é único dentro de cada loja.
+  @@unique([lojaId, numero])
+  // Índice para o dashboard/lista (consulta por loja + status).
+  @@index([lojaId, status])
+  @@index([clienteId])
+  @@index([deletedAt])
+  @@map("pedidos")
+}
+
+/// Item individual de um pedido (um corte/produto e sua quantidade).
+/// Sua existência está atrelada ao Pedido (exclusão em cascata, sem soft delete).
+model ItemPedido {
+  id         String        @id @default(uuid()) @db.Uuid
+  pedidoId   String        @map("pedido_id") @db.Uuid
+  /// Nome do produto/corte conforme informado pelo cliente.
+  produto    String
+  /// Quantidade solicitada; Decimal para suportar pesos como 1,5 ou 0,5.
+  quantidade Decimal       @db.Decimal(10, 3)
+  unidade    UnidadeMedida @default(KG)
+
+  // Relacionamento: muitos itens pertencem a um pedido.
+  pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([pedidoId])
+  @@map("itens_pedido")
+}
+
+/// Estado da conversa conduzida pela IA (sessão de coleta do pedido).
+/// Mantém o "rascunho" do pedido em construção e o contexto até a confirmação
+/// ou expiração. Há uma sessão ativa por telefone dentro de cada loja.
+model Conversa {
+  id             String         @id @default(uuid()) @db.Uuid
+  lojaId         String         @map("loja_id") @db.Uuid
+  telefone       String
+  /// Pedido em construção (itens parciais, campos ainda faltantes) em JSONB.
+  rascunho       Json?          @db.JsonB
+  statusConversa StatusConversa @default(COLETANDO) @map("status_conversa")
+  /// Tentativas sem entendimento — ao atingir o limite, aciona fallback humano.
+  tentativas     Int            @default(0)
+  /// ID da última mensagem processada — garante idempotência (evita
+  /// processar a mesma mensagem do WhatsApp duas vezes).
+  ultimaMensagemId String?      @unique @map("ultima_mensagem_id")
+
+  // Relacionamento: muitas conversas pertencem a uma loja.
+  loja Loja @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  // `updatedAt` mapeado para `atualizado_em` (usado para expirar rascunhos).
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  // Uma sessão ativa por telefone por loja (upsert na entrada de mensagens).
+  @@unique([lojaId, telefone])
+  @@index([lojaId, statusConversa])
+  @@map("conversas")
+}
