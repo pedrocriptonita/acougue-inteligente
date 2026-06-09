@@ -1,36 +1,95 @@
+import { PageHeader } from "@/components/page-header";
 import { requireUsuario } from "@/server/services/auth";
+import { listarPedidosDaLoja } from "@/server/services/pedido";
 
-export const metadata = { title: "Painel" };
+import { PedidoCard, type PedidoDTO } from "./pedido-card";
+import { RealtimePedidos } from "./realtime-pedidos";
+
+export const metadata = { title: "Pedidos" };
+
+// Sempre renderiza com dados frescos (o painel é operacional, não cacheável).
+export const dynamic = "force-dynamic";
+
+const COLUNAS = [
+  { status: "AGUARDANDO_PREPARO" as const, titulo: "Em preparo", cor: "#78d6d5" },
+  { status: "PRONTO" as const, titulo: "Pronto p/ retirada", cor: "#40e56c" },
+  { status: "CONCLUIDO" as const, titulo: "Concluídos", cor: "#b89a9a" },
+];
 
 export default async function DashboardPage() {
   const usuario = await requireUsuario();
+  const pedidos = await listarPedidosDaLoja(usuario.lojaId);
+
+  // Mapeia para um DTO serializável (Decimal → number, Date → ISO).
+  const dtos: PedidoDTO[] = pedidos.map((p) => ({
+    id: p.id,
+    numero: p.numero,
+    nomeCliente: p.nomeCliente,
+    telefoneCliente: p.telefoneCliente,
+    retirada: p.retirada,
+    status: p.status,
+    impresso: p.impresso,
+    criadoEm: p.createdAt.toISOString(),
+    itens: p.itens.map((i) => ({
+      id: i.id,
+      produto: i.produto,
+      quantidade: Number(i.quantidade),
+      unidade: i.unidade,
+      precoUnitario: i.precoUnitario == null ? null : Number(i.precoUnitario),
+    })),
+  }));
+
+  const porStatus = (status: PedidoDTO["status"]) =>
+    dtos.filter((d) => d.status === status);
+
+  const totalAtivos =
+    porStatus("AGUARDANDO_PREPARO").length + porStatus("PRONTO").length;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Bem-vindo, {usuario.nome.split(" ")[0]}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Sua loja está configurada. O painel de pedidos chega na Fase 5.
-        </p>
-      </div>
+      <RealtimePedidos lojaId={usuario.lojaId} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Loja</p>
-          <p className="mt-1 font-medium">{usuario.loja.nome}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">WhatsApp</p>
-          <p className="mt-1 font-medium">{usuario.loja.telefoneWhatsapp}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Plano</p>
-          <p className="mt-1 font-medium capitalize">
-            {usuario.loja.plano.toLowerCase()}
-          </p>
-        </div>
+      <PageHeader
+        titulo="Pedidos"
+        descricao={
+          totalAtivos === 0
+            ? "Nenhum pedido em aberto."
+            : `${totalAtivos} pedido(s) em aberto · atualiza em tempo real`
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {COLUNAS.map((coluna) => {
+          const lista = porStatus(coluna.status);
+          return (
+            <section key={coluna.status} className="flex flex-col gap-3">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="size-2.5 rounded-full"
+                    style={{ backgroundColor: coluna.cor }}
+                  />
+                  <h2 className="text-sm font-semibold text-foreground">
+                    {coluna.titulo}
+                  </h2>
+                </div>
+                <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {lista.length}
+                </span>
+              </div>
+
+              {lista.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
+                  Vazio
+                </p>
+              ) : (
+                lista.map((pedido) => (
+                  <PedidoCard key={pedido.id} pedido={pedido} />
+                ))
+              )}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

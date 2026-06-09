@@ -35,6 +35,12 @@ const envSchema = z.object({
   N8N_WEBHOOK_URL: z.string().url().optional(),
   INTERNAL_API_KEY: z.string().min(1).optional(),
 
+  // Stripe / Billing (Fase 7)
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRICE_MENSAL: z.string().min(1).optional(),
+  STRIPE_PRICE_ANUAL: z.string().min(1).optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

@@ -105,3 +105,21 @@ create policy itens_isolados on public.itens_pedido
         and p.loja_id = public.auth_loja_id()
     )
   );
+
+-- ----------------------------------------------------------------------------
+--  Realtime (Fase 5): o painel assina mudanças em `pedidos` via Supabase
+--  Realtime. A tabela precisa estar na publicação `supabase_realtime`. O RLS
+--  acima garante que cada usuário só recebe eventos da própria loja.
+--  Idempotente: ignora o erro caso a tabela já esteja na publicação.
+-- ----------------------------------------------------------------------------
+do $$
+begin
+  alter publication supabase_realtime add table public.pedidos;
+exception
+  when duplicate_object then null;
+end $$;
+
+-- REPLICA IDENTITY FULL: faz o Postgres enviar a LINHA INTEIRA (não só a PK)
+-- nos eventos de UPDATE/DELETE. Necessário para o filtro `loja_id=eq.<loja>`
+-- do Realtime funcionar em remoções — sem isso, DELETEs não chegam ao painel.
+alter table public.pedidos replica identity full;

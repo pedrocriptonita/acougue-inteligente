@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/server/services/auth";
+import { normalizarTelefone } from "@/server/services/evolution";
 
 /**
  * Onboarding do tenant: cria a Loja e vincula o usuário logado como ADMIN.
@@ -82,7 +83,9 @@ export async function criarLoja(
       const loja = await tx.loja.create({
         data: {
           nome: parsed.data.nomeLoja,
-          telefoneWhatsapp: parsed.data.telefoneWhatsapp,
+          // Canoniza para o mesmo formato usado ao resolver a loja no webhook
+          // (`/api/n8n/mensagem` → normalizarTelefone), garantindo o match.
+          telefoneWhatsapp: normalizarTelefone(parsed.data.telefoneWhatsapp),
         },
       });
 

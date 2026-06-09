@@ -98,10 +98,10 @@ prisma/                     # schema.prisma
 - [x] **Fase 1 — Setup inicial** · projeto, infra VPS, CI/CD, deploy
 - [x] **Fase 2 — Autenticação** · Google Sign-In + RLS + tenant isolado
 - [x] **Fase 3 — APIs externas** · Evolution, OpenAI, PrintNode, N8N
-- [ ] **Fase 4 — Automação WhatsApp** · mensagem → IA → pedido → comanda
-- [ ] **Fase 5 — Painel de gestão** · dashboard, status, realtime, fallback
-- [ ] **Fase 6 — UI shell e refatoração**
-- [ ] **Fase 7 — Billing (SaaS)**
+- [x] **Fase 4 — Automação WhatsApp** · mensagem → IA → pedido → comanda
+- [x] **Fase 5 — Painel de gestão** · dashboard, status, realtime, fallback
+- [x] **Fase 6 — UI shell e refatoração**
+- [x] **Fase 7 — Billing (SaaS)**
 - [ ] **Fase 8 — Polimento**
 
 > ⚠️ **Nota sobre WhatsApp:** a Evolution API é não oficial (risco de banimento do número). Tratada como solução de validação/piloto; plano de migração para a WhatsApp Cloud API oficial previsto para produção.
@@ -160,3 +160,100 @@ Padrões comuns:
 - **`http.ts`** — `fetchJson()` com timeout (`AbortController`) e `ExternalApiError` normalizado.
 - **`getRequiredEnv()`** (`lib/env.ts`) — as chaves são opcionais no boot e cobradas em runtime, só quando a integração é usada (não quebra o dev sem chaves).
 - Variáveis necessárias: ver `.env.example` (`OPENAI_API_KEY`, `EVOLUTION_*`, `PRINTNODE_*`, `N8N_WEBHOOK_URL`, `INTERNAL_API_KEY`).
+
+Validação manual da IA (sem subir o app): `npm run test:ia` (ver `scripts/test-ia.ts`).
+
+---
+
+## Automação WhatsApp (Fase 4)
+
+O **app Next é o cérebro** da automação; o N8N só repassa o webhook da Evolution.
+Toda a lógica e o estado da conversa ficam em TypeScript (testável, versionado).
+
+**Fluxo:** Cliente → WhatsApp → Evolution → N8N → `POST /api/n8n/mensagem` →
+IA interpreta → atualiza a `Conversa` → na confirmação cria o `Pedido` + imprime
+a comanda → responde ao cliente via Evolution.
+
+**Máquina de estados da conversa** (`server/services/conversa.ts`):
+
+```
+COLETANDO → AGUARDANDO_CONFIRMACAO → CONCLUIDA
+   └────────────── HUMANO (fallback) ←─────────────┘
+```
+
+- **Idempotência:** `Conversa.ultimaMensagemId` evita processar a mesma mensagem 2×.
+- **Confirmação:** a IA marca `confirmouPedido` quando o cliente aceita o resumo.
+- **Número do pedido:** sequencial por loja, gerado com `pg_advisory_xact_lock`
+  (`server/services/pedido.ts`) — sem colisão entre mensagens simultâneas.
+- **Impressão:** *best effort* — o pedido é criado mesmo se a impressora falhar
+  (`impresso=false` para reimpressão pelo painel).
+- **Fallback humano:** pedido explícito do cliente ou `MAX_TENTATIVAS` sem progresso.
+
+**Endpoint** `POST /api/n8n/mensagem` (runtime Node):
+
+```jsonc
+// headers: { "x-internal-api-key": "<INTERNAL_API_KEY>" }
+{
+  "numeroLoja": "5511999990000",     // WhatsApp da loja → resolve o tenant
+  "telefoneCliente": "5511988887777",
+  "texto": "meio quilo de picanha pra hoje 18h",
+  "mensagemId": "ABC123",            // id da mensagem (idempotência)
+  "nomeCliente": "João"              // opcional (pushName)
+}
+```
+
+> O N8N **não** deve reenviar a resposta — o app já envia via Evolution. O campo
+> `resposta` no retorno é só para diagnóstico.
+
+---
+
+## Painel de gestão (Fase 5)
+
+Dashboard operacional em `/dashboard` (protegido, escopado por loja).
+
+- **Board por status:** colunas _Em preparo_ → _Pronto p/ retirada_ → _Concluídos_.
+- **Ações** (Server Actions, `server/actions/pedidos.ts`):
+  - _Marcar pronto_ → status `PRONTO`, `prontoEm` e **notifica o cliente** no WhatsApp.
+  - _Concluir_ → `CONCLUIDO` + `concluidoEm`. _Cancelar_ → `CANCELADO`.
+  - _Imprimir/Reimprimir_ comanda (PrintNode). Transições válidas são validadas no servidor.
+- **Tempo real:** `RealtimePedidos` assina a tabela `pedidos` via Supabase Realtime
+  e dá `router.refresh()` a cada mudança — pedidos novos (vindos do WhatsApp)
+  aparecem sem recarregar. Requer a tabela na publicação `supabase_realtime`
+  (incluída em `prisma/sql/rls.sql`); o RLS isola os eventos por loja.
+- **Isolamento:** toda ação revalida o `lojaId` do usuário logado antes de gravar.
+
+---
+
+## UI shell (Fase 6)
+
+Shell de aplicação do painel: **sidebar** fixa no desktop e **navegação
+horizontal** no mobile, com destaque do link ativo.
+
+- Navegação compartilhada em `app/(dashboard)/_components/nav-config.tsx`
+  (`Sidebar` + `MobileNav` consomem a mesma lista).
+- Seções: **Pedidos** (`/dashboard`), **Clientes** (`/dashboard/clientes`),
+  **Conversas** (`/dashboard/conversas`, fila de atendimento humano) e
+  **Configurações** (`/dashboard/configuracoes`, edição da loja — só ADMIN).
+- Refatoração: `components/page-header.tsx` padroniza o cabeçalho das páginas;
+  o `signOut` e os dados do usuário foram para o rodapé da sidebar.
+
+---
+
+## Billing / SaaS (Fase 7)
+
+Assinaturas via **Stripe**, com a Loja como Customer.
+
+- **Planos:** `MENSAL` / `ANUAL` (price ids no `.env`). `TRIAL` é o estado inicial.
+- **Fluxo:** Configurações → "Assinar" → Stripe Checkout → retorno ao painel.
+  Gerenciar/cancelar é pelo **Customer Portal** do Stripe.
+- **Webhook** `POST /api/stripe/webhook` (runtime Node, fora do proxy) é a
+  **fonte da verdade**: valida a assinatura `stripe-signature` (corpo cru) e
+  atualiza `plano`, `assinaturaStatus`, `assinaturaExpiraEm`, `stripe*Id` na Loja.
+  Eventos tratados: `checkout.session.completed`,
+  `customer.subscription.created/updated/deleted`.
+- **Serviço:** `server/services/stripe.ts` (cliente lazy, checkout, portal,
+  verificação de webhook, mapa price↔plano). **Ações:** `server/actions/billing.ts`
+  (só ADMIN).
+- ⚠️ **Migration necessária:** os campos de billing foram adicionados à `Loja` —
+  rode `npm run prisma:migrate` antes de usar.
+- Para testar webhooks localmente: `stripe listen --forward-to localhost:3000/api/stripe/webhook`.

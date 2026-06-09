@@ -1,0 +1,72 @@
+{
+  "name": "Açougue Inteligente — WhatsApp Inbound",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-acougue",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "evolution-acougue"
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Normaliza o payload do webhook da Evolution (event: messages.upsert)\n// para o formato esperado por /api/n8n/mensagem. Descarta o que não for\n// uma mensagem de TEXTO de um CLIENTE (ignora fromMe, grupos e mídia).\n\nconst raw = $input.first().json;\nconst body = raw.body ?? raw; // o Webhook coloca o corpo em .body\nconst data = body.data ?? {};\nconst key = data.key ?? {};\n\n// 1. Só o evento de mensagem recebida\nif (body.event && body.event !== 'messages.upsert') return [];\n\n// 2. Ignora mensagens enviadas pela própria loja (eco do bot)\nif (key.fromMe) return [];\n\n// 3. Extrai o texto (conversation ou extendedTextMessage)\nconst texto = (\n  data.message?.conversation ||\n  data.message?.extendedTextMessage?.text ||\n  ''\n).trim();\nif (!texto) return []; // sem texto (áudio/imagem/etc.) → ignora\n\n// 4. Ignora grupos\nconst remoteJid = key.remoteJid || '';\nif (remoteJid.endsWith('@g.us')) return [];\n\n// 5. Telefones (só dígitos) e ids\nconst telefoneCliente = remoteJid.split('@')[0].split(':')[0];\nconst numeroLoja = String(body.sender || '').split('@')[0].split(':')[0];\nconst mensagemId = key.id;\nconst nomeCliente = data.pushName || '';\n\nif (!telefoneCliente || !numeroLoja || !mensagemId) return [];\n\nreturn [{ json: { numeroLoja, telefoneCliente, texto, mensagemId, nomeCliente } }];"
+      },
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Mapear payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APP_BASE_URL }}/api/n8n/mensagem",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-internal-api-key",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "POST /api/n8n/mensagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Evolution": {
+      "main": [[{ "node": "Mapear payload", "type": "main", "index": 0 }]]
+    },
+    "Mapear payload": {
+      "main": [[{ "node": "POST /api/n8n/mensagem", "type": "main", "index": 0 }]]
+    }
+  }
+}

@@ -37,6 +37,12 @@ export const pedidoInterpretadoSchema = z.object({
   retirada: z.string().nullable(),
   /** A IA entende que o pedido está completo e pronto para confirmação? */
   pedidoCompleto: z.boolean(),
+  /**
+   * True quando o cliente está confirmando um pedido já resumido (responde
+   * "sim", "pode", "confirma" etc.). Só é relevante quando a conversa estava
+   * aguardando confirmação. Veja `ContextoConversa.aguardandoConfirmacao`.
+   */
+  confirmouPedido: z.boolean(),
   /** Sinaliza que a conversa deve ir para um atendente humano (fallback). */
   precisaAtendimentoHumano: z.boolean(),
   /** Resposta sugerida ao cliente, em pt-BR. */
@@ -67,6 +73,7 @@ const responseJsonSchema = {
     },
     retirada: { type: ["string", "null"] },
     pedidoCompleto: { type: "boolean" },
+    confirmouPedido: { type: "boolean" },
     precisaAtendimentoHumano: { type: "boolean" },
     mensagemAoCliente: { type: "string" },
   },
@@ -74,6 +81,7 @@ const responseJsonSchema = {
     "itens",
     "retirada",
     "pedidoCompleto",
+    "confirmouPedido",
     "precisaAtendimentoHumano",
     "mensagemAoCliente",
   ],
@@ -86,6 +94,7 @@ Regras:
 - Converta expressões comuns: "meio quilo" = 0.5 KG; "1 quilo e meio" = 1.5 KG; "500 gramas" = 500 G; "duas bandejas" trate como PECA.
 - "retirada": horário que o cliente quer retirar (ex.: "18:00") ou a string "ao ficar pronto" se ele não definir hora. Use null se ainda não houver informação.
 - "pedidoCompleto": true somente quando houver ao menos 1 item E uma definição de retirada, e o cliente não estiver pedindo mais coisas.
+- "confirmouPedido": true APENAS quando o sistema indicar que está aguardando confirmação E a mensagem do cliente for uma confirmação afirmativa (ex.: "sim", "pode", "confirma", "isso mesmo", "fechado"). Caso contrário, false. Se o cliente pedir alteração em vez de confirmar, atualize os itens e mantenha false.
 - "precisaAtendimentoHumano": true se o cliente pedir para falar com uma pessoa, reclamar, ou se a mensagem for incompreensível/fora do escopo de pedidos.
 - "mensagemAoCliente": resposta curta, cordial e objetiva em pt-BR. Se faltar algo (itens ou horário), pergunte. Se o pedido estiver completo, resuma os itens e o horário e peça a confirmação ("Posso confirmar?").
 - NUNCA invente itens ou quantidades que o cliente não disse. Na dúvida sobre a quantidade, pergunte.`;
@@ -97,6 +106,8 @@ type ChatCompletionResponse = {
 /** Mensagem anterior da conversa, para dar contexto ao modelo. */
 export type ContextoConversa = {
   rascunhoAtual?: PedidoInterpretado | null;
+  /** A conversa está aguardando o cliente confirmar um pedido já resumido? */
+  aguardandoConfirmacao?: boolean;
   /** Histórico opcional (ex.: últimas trocas), do mais antigo ao mais recente. */
   historico?: { autor: "cliente" | "loja"; texto: string }[];
 };
@@ -121,6 +132,14 @@ export async function interpretarPedido(
       content: `Rascunho do pedido até agora (JSON): ${JSON.stringify(
         contexto.rascunhoAtual
       )}. Atualize-o com a nova mensagem do cliente, sem descartar o que já estava correto.`,
+    });
+  }
+
+  if (contexto.aguardandoConfirmacao) {
+    messages.push({
+      role: "system",
+      content:
+        "A conversa está AGUARDANDO CONFIRMAÇÃO: o pedido acima já foi resumido ao cliente. Avalie se esta mensagem é uma confirmação afirmativa e preencha 'confirmouPedido' conforme as regras.",
     });
   }
 

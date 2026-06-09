@@ -18,8 +18,10 @@ export const config = {
    *  - _next/static, _next/image (build/otimização)
    *  - favicon e arquivos de imagem comuns
    *  - /api/health (monitoramento sem necessidade de sessão)
+   *  - /api/n8n/* (máquina-a-máquina, autenticado por chave interna)
+   *  - /api/stripe/* (webhook autenticado pela assinatura do Stripe)
    */
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/health|api/n8n|api/stripe|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

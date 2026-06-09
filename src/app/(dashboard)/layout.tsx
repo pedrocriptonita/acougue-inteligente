@@ -1,43 +1,55 @@
 import { requireUsuario } from "@/server/services/auth";
 
-import { signOut } from "@/server/actions/auth";
-import { Button } from "@/components/ui/button";
+import { BotStatus } from "./_components/bot-status";
+import { MobileNav } from "./_components/mobile-nav";
+import { Sidebar } from "./_components/sidebar";
 
 /**
- * Layout do painel protegido. Garante (server-side) que há um Usuario com Loja
- * vinculada — caso contrário, `requireUsuario` redireciona (/login ou /setup).
+ * Shell do painel protegido. Garante (server-side) um Usuario com Loja
+ * vinculada — senão `requireUsuario` redireciona (/login ou /setup).
  *
- * O painel em si (dashboard de pedidos, realtime) é construído na Fase 5;
- * aqui ficam o cabeçalho e o controle de sessão comuns.
+ * Estrutura: sidebar fixa no desktop + navegação horizontal no mobile, com
+ * topbar contendo o status do bot de WhatsApp.
  */
 export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const usuario = await requireUsuario();
+  const primeiroNome = usuario.nome.split(" ")[0];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <span className="font-display text-base font-semibold">A</span>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar
+        lojaNome={usuario.loja.nome}
+        usuarioNome={usuario.nome}
+        perfil={usuario.perfil}
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+          {/* marca mini (mobile) — no desktop a sidebar já mostra a loja */}
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <span className="font-display text-sm font-semibold">A</span>
             </div>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">{usuario.loja.nome}</p>
-              <p className="text-xs text-muted-foreground">
-                {usuario.nome} · {usuario.perfil === "ADMIN" ? "Admin" : "Funcionário"}
-              </p>
-            </div>
+            <span className="max-w-[40vw] truncate font-display text-sm font-semibold">
+              {usuario.loja.nome}
+            </span>
           </div>
-          <form action={signOut}>
-            <Button type="submit" variant="ghost" size="sm">
-              Sair
-            </Button>
-          </form>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+          <div className="hidden lg:block" />
+
+          <div className="flex items-center gap-3 sm:gap-4">
+            <BotStatus />
+            <span className="hidden text-sm text-muted-foreground sm:block">
+              Olá, {primeiroNome}
+            </span>
+          </div>
+        </header>
+
+        <MobileNav />
+
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+      </div>
     </div>
   );
 }

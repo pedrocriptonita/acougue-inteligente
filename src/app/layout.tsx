@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { Fraunces, Hanken_Grotesk } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-inter",
   display: "swap",
-  axes: ["opsz"],
 });
 
-const hanken = Hanken_Grotesk({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-hanken",
+  variable: "--font-outfit",
   display: "swap",
 });
 
@@ -29,8 +28,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${fraunces.variable} ${hanken.variable} font-sans antialiased`}>
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
+      <body className={`${outfit.variable} ${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

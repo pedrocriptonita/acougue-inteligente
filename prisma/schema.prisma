@@ -84,6 +84,16 @@ model Loja {
   /// Permite suspender a operação da loja sem excluí-la.
   ativo            Boolean         @default(true)
 
+  // --- Billing / Stripe (Fase 7) ---
+  /// Cliente no Stripe (criado no 1º checkout). Único por loja.
+  stripeCustomerId     String?           @unique @map("stripe_customer_id")
+  /// Assinatura ativa no Stripe (1:1 com a loja no MVP).
+  stripeSubscriptionId String?           @unique @map("stripe_subscription_id")
+  /// Status da assinatura espelhado do Stripe (active, trialing, past_due, canceled...).
+  assinaturaStatus     String?           @map("assinatura_status")
+  /// Fim do período pago atual (renovação ou expiração).
+  assinaturaExpiraEm   DateTime?         @map("assinatura_expira_em")
+
   // Relacionamentos (1 loja → N de cada entidade)
   usuarios  Usuario[]
   clientes  Cliente[]
@@ -205,6 +215,8 @@ model ItemPedido {
   /// Quantidade solicitada; Decimal para suportar pesos como 1,5 ou 0,5.
   quantidade Decimal       @db.Decimal(10, 3)
   unidade    UnidadeMedida @default(KG)
+  /// Preço por unidade (R$). Opcional: definido no painel (não há catálogo no MVP).
+  precoUnitario Decimal?   @db.Decimal(10, 2) @map("preco_unitario")
 
   // Relacionamento: muitos itens pertencem a um pedido.
   pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
