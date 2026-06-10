@@ -1,3 +1,5 @@
+import "server-only";
+
 import { PrismaClient } from "@prisma/client";
 
 // Singleton do Prisma Client para evitar múltiplas conexões em desenvolvimento

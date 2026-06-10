@@ -49,6 +49,32 @@ const envSchema = z.object({
 export const env = envSchema.parse(process.env);
 
 /**
+ * Fail-fast: em produção EM EXECUÇÃO (não durante o build), exige as variáveis
+ * essenciais para o app funcionar (Supabase + banco). Evita subir um deploy
+ * silenciosamente quebrado. As chaves de integração (OpenAI, Evolution, etc.)
+ * continuam sendo cobradas sob demanda via `getRequiredEnv()`.
+ *
+ * Durante `next build` (NEXT_PHASE = phase-production-build) não exigimos nada,
+ * para o build de CI/Vercel passar com placeholders.
+ */
+const emBuild = process.env.NEXT_PHASE === "phase-production-build";
+if (env.NODE_ENV === "production" && !emBuild) {
+  const essenciais = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "DATABASE_URL",
+    "DIRECT_URL",
+  ] as const;
+  const faltando = essenciais.filter((k) => !env[k]);
+  if (faltando.length > 0) {
+    throw new Error(
+      `Variáveis de ambiente obrigatórias ausentes em produção: ${faltando.join(", ")}.`
+    );
+  }
+}
+
+/**
  * Lê uma variável de ambiente obrigatória em tempo de execução.
  * Use dentro dos serviços externos (server-side) para falhar com uma mensagem
  * clara quando uma integração for acionada sem estar configurada.

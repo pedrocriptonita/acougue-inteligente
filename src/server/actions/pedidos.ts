@@ -10,6 +10,7 @@ import { imprimirComanda } from "@/server/services/printnode";
 import {
   buscarPedidoDaLoja,
   definirPrecosItens,
+  listarPendentesImpressao,
   marcarImpresso,
 } from "@/server/services/pedido";
 import type { Unidade } from "@/server/services/openai";
@@ -98,6 +99,49 @@ export async function definirPrecosPedido(
 
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+export type FlushResultado =
+  | { ok: true; impressos: number; falhas: number }
+  | { ok: false; erro: string };
+
+/**
+ * Reenvia para impressão TODOS os pedidos pendentes (impresso=false) da loja.
+ * Útil para recuperar comandas cujo envio ao PrintNode falhou. Pode ser chamado
+ * manualmente (botão) ou por um agendador (Vercel Cron) no futuro.
+ */
+export async function reimprimirPendentes(): Promise<FlushResultado> {
+  const usuario = await requireUsuario();
+  const pendentes = await listarPendentesImpressao(usuario.lojaId);
+
+  let impressos = 0;
+  let falhas = 0;
+
+  for (const pedido of pendentes) {
+    try {
+      await imprimirComanda({
+        numero: pedido.numero,
+        nomeLoja: pedido.loja.nome,
+        nomeCliente: pedido.nomeCliente,
+        telefoneCliente: pedido.telefoneCliente,
+        retirada: pedido.retirada,
+        itens: pedido.itens.map((i) => ({
+          produto: i.produto,
+          quantidade: Number(i.quantidade),
+          unidade: i.unidade as Unidade,
+        })),
+        criadoEm: pedido.createdAt,
+      });
+      await marcarImpresso(pedido.id);
+      impressos++;
+    } catch (e) {
+      falhas++;
+      console.error(`[pedidos] falha ao reimprimir pendente #${pedido.numero}:`, e);
+    }
+  }
+
+  if (impressos > 0) revalidatePath("/dashboard");
+  return { ok: true, impressos, falhas };
 }
 
 /** Reimprime a comanda de um pedido (ex.: impressão falhou na criação). */

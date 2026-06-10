@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getRequiredEnv } from "@/lib/env";
 
 import { fetchJson } from "./http";

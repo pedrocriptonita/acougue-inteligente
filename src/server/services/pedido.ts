@@ -1,4 +1,4 @@
-import type { Pedido, Prisma } from "@prisma/client";
+import { type Pedido, type Prisma, StatusPedido } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -155,6 +155,26 @@ export async function definirPrecosItens(
       )
   );
   return true;
+}
+
+/**
+ * Lista os pedidos da loja que ainda NÃO foram impressos (fila de impressão),
+ * com os dados necessários para gerar a comanda. Exclui cancelados/removidos.
+ */
+export async function listarPendentesImpressao(lojaId: string) {
+  return prisma.pedido.findMany({
+    where: {
+      lojaId,
+      deletedAt: null,
+      impresso: false,
+      status: { not: StatusPedido.CANCELADO },
+    },
+    orderBy: { createdAt: "asc" },
+    include: {
+      itens: { select: { produto: true, quantidade: true, unidade: true } },
+      loja: { select: { nome: true } },
+    },
+  });
 }
 
 /**

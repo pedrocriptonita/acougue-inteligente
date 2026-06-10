@@ -4,6 +4,7 @@ import { listarPedidosDaLoja } from "@/server/services/pedido";
 
 import { PedidoCard, type PedidoDTO } from "./pedido-card";
 import { RealtimePedidos } from "./realtime-pedidos";
+import { ReimprimirPendentes } from "./reimprimir-pendentes";
 
 export const metadata = { title: "Pedidos" };
 
@@ -45,6 +46,10 @@ export default async function DashboardPage() {
   const totalAtivos =
     porStatus("AGUARDANDO_PREPARO").length + porStatus("PRONTO").length;
 
+  const pendentesImpressao = dtos.filter(
+    (d) => !d.impresso && d.status !== "CANCELADO"
+  ).length;
+
   return (
     <div className="space-y-6">
       <RealtimePedidos lojaId={usuario.lojaId} />
@@ -56,7 +61,9 @@ export default async function DashboardPage() {
             ? "Nenhum pedido em aberto."
             : `${totalAtivos} pedido(s) em aberto · atualiza em tempo real`
         }
-      />
+      >
+        <ReimprimirPendentes pendentes={pendentesImpressao} />
+      </PageHeader>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {COLUNAS.map((coluna) => {

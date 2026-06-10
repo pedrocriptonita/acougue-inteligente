@@ -1,3 +1,5 @@
+import "server-only";
+
 import { redirect } from "next/navigation";
 import type { Loja, Usuario } from "@prisma/client";
 import type { User } from "@supabase/supabase-js";

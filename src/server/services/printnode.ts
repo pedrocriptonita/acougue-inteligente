@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getRequiredEnv } from "@/lib/env";
 
 import { ExternalApiError, fetchJson } from "./http";
@@ -26,6 +28,32 @@ export type DadosComanda = {
   criadoEm?: Date;
 };
 
+/** Tipo de corte de papel ao final da comanda. */
+export type TipoCorte = "parcial" | "total" | "nenhum";
+
+/**
+ * Comandos ESC/POS (padrão das térmicas). São bytes de controle invisíveis que
+ * a impressora executa (negrito, tamanho, alinhamento, corte).
+ *
+ * ⚠️ O comando de CORTE varia um pouco por fabricante. `GS V 1` (parcial) e
+ * `GS V 0` (total) cobrem a maioria; se a Elgin i9 não cortar, ajustar aqui
+ * (ex.: `GS V B n`) conforme o manual dela.
+ */
+const ESC = "\x1B";
+const GS = "\x1D";
+const CMD = {
+  init: `${ESC}@`, // reset
+  alignLeft: `${ESC}a\x00`,
+  alignCenter: `${ESC}a\x01`,
+  boldOn: `${ESC}E\x01`,
+  boldOff: `${ESC}E\x00`,
+  sizeNormal: `${GS}!\x00`,
+  sizeDoubleHeight: `${GS}!\x01`, // altura dupla
+  sizeDouble: `${GS}!\x11`, // largura + altura dupla
+  cutParcial: `${GS}V\x01`,
+  cutTotal: `${GS}V\x00`,
+} as const;
+
 function linha(char = "-") {
   return char.repeat(LARGURA);
 }
@@ -42,14 +70,28 @@ function formatarQuantidade(qtd: number, unidade: Unidade) {
   return `${qtd} ${rotulo}`;
 }
 
-/** Monta o texto da comanda (uma string pronta para impressão térmica). */
-export function formatarComanda(d: DadosComanda): string {
-  const data = (d.criadoEm ?? new Date()).toLocaleString("pt-BR", {
+/** Linha de um item: produto à esquerda, quantidade à direita (quebra se largo). */
+function linhaItem(item: DadosComanda["itens"][number]): string {
+  const qtd = formatarQuantidade(item.quantidade, item.unidade);
+  const espaco = Math.max(1, LARGURA - item.produto.length - qtd.length);
+  return item.produto.length + qtd.length + 1 > LARGURA
+    ? `${item.produto}\n  ${qtd}`
+    : `${item.produto}${" ".repeat(espaco)}${qtd}`;
+}
+
+function dataComanda(d: DadosComanda): string {
+  return (d.criadoEm ?? new Date()).toLocaleString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     dateStyle: "short",
     timeStyle: "short",
   });
+}
 
+/**
+ * Texto PURO da comanda (sem comandos de controle). Usado para PRÉVIA/leitura
+ * (ex.: `npm run test:impressao`). A impressão real usa `montarComandaEscPos`.
+ */
+export function formatarComanda(d: DadosComanda): string {
   const linhas: string[] = [
     centralizar(d.nomeLoja.toUpperCase()),
     linha("="),
@@ -58,21 +100,51 @@ export function formatarComanda(d: DadosComanda): string {
     `Fone: ${d.telefoneCliente}`,
     `Retirada: ${d.retirada}`,
     linha(),
+    ...d.itens.map(linhaItem),
+    linha(),
+    `Emitido em ${dataComanda(d)}`,
+    "",
+    "",
+    "",
   ];
-
-  for (const item of d.itens) {
-    const qtd = formatarQuantidade(item.quantidade, item.unidade);
-    // produto à esquerda, quantidade à direita
-    const espaco = Math.max(1, LARGURA - item.produto.length - qtd.length);
-    linhas.push(
-      item.produto.length + qtd.length + 1 > LARGURA
-        ? `${item.produto}\n  ${qtd}`
-        : `${item.produto}${" ".repeat(espaco)}${qtd}`
-    );
-  }
-
-  linhas.push(linha(), `Emitido em ${data}`, "", "", "");
   return linhas.join("\n");
+}
+
+/**
+ * Comanda em ESC/POS (bytes de controle + texto): nome da loja grande e em
+ * negrito, nº do pedido em destaque, "Retirada" em negrito, avanço de papel e
+ * corte ao final. É o conteúdo enviado de fato à impressora.
+ */
+export function montarComandaEscPos(
+  d: DadosComanda,
+  corte: TipoCorte = "parcial"
+): string {
+  const p: string[] = [CMD.init];
+
+  // Cabeçalho: nome da loja centralizado, grande e em negrito.
+  p.push(CMD.alignCenter, CMD.sizeDouble, CMD.boldOn);
+  p.push(`${d.nomeLoja.toUpperCase()}\n`);
+  p.push(CMD.boldOff, CMD.sizeNormal, CMD.alignLeft);
+  p.push(`${linha("=")}\n`);
+
+  // Número do pedido em destaque (negrito + altura dupla).
+  p.push(CMD.sizeDoubleHeight, CMD.boldOn, `PEDIDO #${d.numero}\n`, CMD.boldOff, CMD.sizeNormal);
+
+  p.push(`Cliente: ${d.nomeCliente}\n`);
+  p.push(`Fone: ${d.telefoneCliente}\n`);
+  p.push(CMD.boldOn, `Retirada: ${d.retirada}\n`, CMD.boldOff);
+  p.push(`${linha()}\n`);
+
+  for (const item of d.itens) p.push(`${linhaItem(item)}\n`);
+
+  p.push(`${linha()}\n`);
+  p.push(`Emitido em ${dataComanda(d)}\n`);
+  p.push("\n\n\n"); // avanço de papel antes do corte
+
+  if (corte === "parcial") p.push(CMD.cutParcial);
+  else if (corte === "total") p.push(CMD.cutTotal);
+
+  return p.join("");
 }
 
 type PrintJobResponse = number; // PrintNode retorna o ID do job (número)
@@ -80,8 +152,15 @@ type PrintJobResponse = number; // PrintNode retorna o ID do job (número)
 /**
  * Imprime a comanda de um pedido. Retorna o ID do print job do PrintNode.
  * Lança `ExternalApiError` em falha.
+ *
+ * Por padrão usa ESC/POS com corte PARCIAL (a comanda fica pendurada por um fio,
+ * formando fila — o balcão puxa na ordem). Passe `corte: "total"` para separar
+ * de vez ou `"nenhum"` para não cortar.
  */
-export async function imprimirComanda(dados: DadosComanda): Promise<number> {
+export async function imprimirComanda(
+  dados: DadosComanda,
+  opcoes: { corte?: TipoCorte } = {}
+): Promise<number> {
   const apiKey = getRequiredEnv("PRINTNODE_API_KEY");
   const printerId = Number(getRequiredEnv("PRINTNODE_PRINTER_ID"));
   if (!Number.isFinite(printerId)) {
@@ -92,7 +171,7 @@ export async function imprimirComanda(dados: DadosComanda): Promise<number> {
     );
   }
 
-  const conteudo = formatarComanda(dados);
+  const conteudo = montarComandaEscPos(dados, opcoes.corte ?? "parcial");
   // Basic auth: apiKey no usuário, senha vazia.
   const auth = Buffer.from(`${apiKey}:`).toString("base64");
 
@@ -106,7 +185,7 @@ export async function imprimirComanda(dados: DadosComanda): Promise<number> {
     body: JSON.stringify({
       printerId,
       title: `Comanda #${dados.numero}`,
-      // Texto puro como bytes brutos para a térmica (a maioria imprime ASCII).
+      // ESC/POS (texto + bytes de controle) enviado como bytes brutos.
       contentType: "raw_base64",
       content: Buffer.from(conteudo, "utf8").toString("base64"),
       source: "acougue-inteligente",
