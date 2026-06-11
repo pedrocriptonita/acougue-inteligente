@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { comTimeout } from "@/lib/timeout";
 
 /**
  * Camada de autenticação server-side.
@@ -29,10 +30,13 @@ export type AuthContext = {
 /** Retorna o usuário autenticado do Supabase, ou `null` se não houver sessão. */
 export async function getAuthUser(): Promise<User | null> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  // Falha rápido (4s) se o Supabase estiver inacessível, em vez de pendurar
+  // nos retries internos do SDK. Recupera no próximo request quando a rede volta.
+  return comTimeout(
+    supabase.auth.getUser().then((r) => r.data.user),
+    4000,
+    null
+  );
 }
 
 /**

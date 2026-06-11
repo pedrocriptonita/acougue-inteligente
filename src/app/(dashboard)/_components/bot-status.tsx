@@ -15,22 +15,36 @@ export function BotStatus() {
 
   useEffect(() => {
     let ativo = true;
+    let timer: ReturnType<typeof setTimeout>;
 
     async function checar() {
+      let online = false;
       try {
-        const res = await fetch("/api/bot/status", { cache: "no-store" });
+        // Timeout no fetch para não esperar 30s+ quando o servidor/rede trava.
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8_000);
+        const res = await fetch("/api/bot/status", {
+          cache: "no-store",
+          signal: ctrl.signal,
+        });
+        clearTimeout(t);
         const data = (await res.json()) as { online?: boolean };
-        if (ativo) setEstado(data.online ? "online" : "offline");
+        online = Boolean(data.online);
       } catch {
-        if (ativo) setEstado("offline");
+        online = false;
       }
+
+      if (!ativo) return;
+      setEstado(online ? "online" : "offline");
+      // Backoff: quando online checa a cada 30s; offline espaça para 60s
+      // (evita martelar o servidor durante uma queda de conexão).
+      timer = setTimeout(checar, online ? 30_000 : 60_000);
     }
 
     checar();
-    const id = setInterval(checar, 30_000);
     return () => {
       ativo = false;
-      clearInterval(id);
+      clearTimeout(timer);
     };
   }, []);
 

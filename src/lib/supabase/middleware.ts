@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { comTimeout } from "@/lib/timeout";
+
 /**
  * Atualiza a sessão do Supabase a cada requisição e protege as rotas privadas.
  * Usado pelo `proxy.ts` (mecanismo de middleware do Next.js).
@@ -52,9 +54,14 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANTE: não execute código entre createServerClient e getUser().
   // getUser() revalida o token com o Supabase e renova a sessão nos cookies.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Com timeout (4s): se o Supabase estiver inacessível, não pendura o request
+  // inteiro nos retries do SDK — trata como "sem sessão" e segue (a rota privada
+  // redireciona para /login; volta a funcionar sozinho quando a rede retorna).
+  const user = await comTimeout(
+    supabase.auth.getUser().then((r) => r.data.user),
+    4000,
+    null
+  );
 
   const { pathname } = request.nextUrl;
   const ehRotaPrivada = ROTAS_PRIVADAS.some(

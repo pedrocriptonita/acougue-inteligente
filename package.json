@@ -18,9 +18,9 @@
     "prisma:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ia": "tsx scripts/test-ia.ts",
-    "test:impressao": "tsx scripts/test-impressao.ts",
-    "seed:pedidos": "tsx scripts/seed-pedidos.ts",
+    "test:ia": "cross-env NODE_OPTIONS=--conditions=react-server tsx scripts/test-ia.ts",
+    "test:impressao": "cross-env NODE_OPTIONS=--conditions=react-server tsx scripts/test-impressao.ts",
+    "seed:pedidos": "cross-env NODE_OPTIONS=--conditions=react-server tsx scripts/seed-pedidos.ts",
     "prepare": "husky"
   },
   "dependencies": {
