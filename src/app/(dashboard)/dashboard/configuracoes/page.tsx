@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { billingHabilitado } from "@/lib/env";
 import { PageHeader } from "@/components/page-header";
 import { requireUsuario } from "@/server/services/auth";
 
@@ -43,13 +44,16 @@ export default async function ConfiguracoesPage() {
           </CardContent>
         </Card>
 
-        <PlanoCard
-          plano={usuario.loja.plano}
-          status={usuario.loja.assinaturaStatus}
-          expiraEm={usuario.loja.assinaturaExpiraEm?.toISOString() ?? null}
-          temCliente={Boolean(usuario.loja.stripeCustomerId)}
-          ehAdmin={ehAdmin}
-        />
+        {/* Assinatura: oculta no MVP (loja única). Reative com BILLING_ENABLED. */}
+        {billingHabilitado && (
+          <PlanoCard
+            plano={usuario.loja.plano}
+            status={usuario.loja.assinaturaStatus}
+            expiraEm={usuario.loja.assinaturaExpiraEm?.toISOString() ?? null}
+            temCliente={Boolean(usuario.loja.stripeCustomerId)}
+            ehAdmin={ehAdmin}
+          />
+        )}
 
         <Card>
           <CardHeader>

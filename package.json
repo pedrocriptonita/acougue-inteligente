@@ -16,6 +16,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:ia": "tsx scripts/test-ia.ts",
     "test:impressao": "tsx scripts/test-impressao.ts",
     "seed:pedidos": "tsx scripts/seed-pedidos.ts",

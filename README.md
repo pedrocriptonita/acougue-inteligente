@@ -243,6 +243,11 @@ horizontal** no mobile, com destaque do link ativo.
 
 Assinaturas via **Stripe**, com a Loja como Customer.
 
+> 🚩 **Desligado por padrão** (`BILLING_ENABLED="false"`). O MVP atende uma loja
+> só, então a tela de assinatura fica oculta. O código (serviço, webhook, ações)
+> permanece pronto: para ativar no futuro, defina `BILLING_ENABLED="true"` e as
+> chaves `STRIPE_*`.
+
 - **Planos:** `MENSAL` / `ANUAL` (price ids no `.env`). `TRIAL` é o estado inicial.
 - **Fluxo:** Configurações → "Assinar" → Stripe Checkout → retorno ao painel.
   Gerenciar/cancelar é pelo **Customer Portal** do Stripe.

@@ -35,7 +35,9 @@ const envSchema = z.object({
   N8N_WEBHOOK_URL: z.string().url().optional(),
   INTERNAL_API_KEY: z.string().min(1).optional(),
 
-  // Stripe / Billing (Fase 7)
+  // Stripe / Billing (Fase 7) — desligado por padrão no MVP de loja única.
+  // Ative com BILLING_ENABLED="true" (+ as chaves Stripe) quando for cobrar.
+  BILLING_ENABLED: z.enum(["true", "false"]).optional(),
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   STRIPE_PRICE_MENSAL: z.string().min(1).optional(),
@@ -79,6 +81,12 @@ if (env.NODE_ENV === "production" && !emBuild) {
  * Use dentro dos serviços externos (server-side) para falhar com uma mensagem
  * clara quando uma integração for acionada sem estar configurada.
  */
+/**
+ * Billing (Stripe) habilitado? Desligado por padrão — o MVP atende uma loja só.
+ * Para reativar no futuro: BILLING_ENABLED="true" + as chaves STRIPE_*.
+ */
+export const billingHabilitado = env.BILLING_ENABLED === "true";
+
 export function getRequiredEnv(name: keyof typeof env): string {
   const value = env[name];
   if (typeof value !== "string" || value.length === 0) {
