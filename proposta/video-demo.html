@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo em vídeo — Açougue Inteligente</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       BASE — palco 16:9 que escala para qualquer tela
+       ============================================================ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --crimson: #DC143C;
+      --gold: #D4A017;
+      --gold-soft: #C8A951;
+      --whatsapp: #25D366;
+      --whatsapp-dark: #128C7E;
+      --ink: #1A1A2E;
+      --bg-dark: #14141f;
+      --grad: linear-gradient(135deg, #DC143C 0%, #C8392B 55%, #D4A017 130%);
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-head: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: var(--font-body);
+      background: #060609;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Palco com proporção 16:9 fixa — escala via transform no JS */
+    .stage-wrap {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      flex-shrink: 0;
+    }
+
+    .stage {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(800px 460px at 80% -10%, rgba(212, 160, 23, 0.14), transparent 60%),
+        radial-gradient(700px 480px at 5% 95%, rgba(220, 20, 60, 0.16), transparent 60%),
+        var(--bg-dark);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.7);
+    }
+
+    /* ============================================================
+       CENAS — empilhadas, controladas por classe .on
+       ============================================================ */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(1.04);
+      transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.65s;
+    }
+    .scene.on {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+    }
+
+    /* Legenda inferior de cada cena */
+    .caption {
+      position: absolute;
+      bottom: 56px;
+      left: 0; right: 0;
+      text-align: center;
+      color: #fff;
+      pointer-events: none;
+    }
+    .caption .step-tag {
+      display: inline-block;
+      background: var(--grad);
+      color: #fff;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      padding: 8px 22px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(220, 20, 60, 0.4);
+      margin-bottom: 10px;
+    }
+    .caption .step-text {
+      font-family: var(--font-head);
+      font-size: 24px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    /* ============================================================
+       CENA 1 — ABERTURA
+       ============================================================ */
+    .intro-logo {
+      font-size: 96px;
+      animation: pop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .intro-name {
+      font-family: var(--font-head);
+      font-size: 54px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      margin: 18px 0 10px;
+      animation: rise-in 0.8s 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .intro-name .red {
+      background: linear-gradient(120deg, #ff5470 10%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .intro-sub {
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.65);
+      animation: rise-in 0.8s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes pop-in { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+    @keyframes rise-in { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ============================================================
+       CENA 2 — WHATSAPP (celular grande, conversa animada)
+       ============================================================ */
+    .phone {
+      width: 400px;
+      background: #0a0a12;
+      border-radius: 46px;
+      padding: 13px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6), inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+      margin-bottom: 104px;
+    }
+    .phone-screen {
+      background: #ECE5DD;
+      border-radius: 35px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 530px;
+    }
+    .wa-header {
+      background: var(--whatsapp-dark);
+      color: #fff;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .wa-header .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--grad);
+      display: grid; place-items: center;
+      font-size: 19px;
+    }
+    .wa-header .name { font-size: 15.5px; font-weight: 700; line-height: 1.2; }
+    .wa-header .status { font-size: 11.5px; color: rgba(255, 255, 255, 0.75); }
+    .wa-header .status .typing-label { color: #aef5c9; }
+
+    .wa-chat {
+      flex: 1;
+      padding: 16px 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: hidden;
+      background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+    .wa-msg {
+      max-width: 86%;
+      font-size: 15px;
+      line-height: 1.5;
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+      white-space: pre-line;
+      /* Oculta SEM ocupar espaço — senão as mensagens futuras empurram as
+         visíveis para fora da área do chat (overflow hidden). */
+      display: none;
+      animation: msg-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .wa-msg.shown { display: block; }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: none; }
+    }
+    .wa-msg.client { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 4px; }
+    .wa-msg.bot { align-self: flex-start; background: #fff; border-bottom-left-radius: 4px; }
+    .wa-msg .time { display: block; text-align: right; font-size: 10px; color: rgba(0, 0, 0, 0.4); margin-top: 3px; }
+
+    .wa-typing {
+      align-self: flex-start;
+      background: #fff;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      padding: 13px 16px;
+      display: none;
+      gap: 5px;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    }
+    .wa-typing.shown { display: flex; }
+    .wa-typing i {
+      width: 7px; height: 7px;
+      background: #999;
+      border-radius: 50%;
+      animation: t-dot 1.2s ease-in-out infinite;
+    }
+    .wa-typing i:nth-child(2) { animation-delay: 0.18s; }
+    .wa-typing i:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes t-dot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+    .wa-inputbar {
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #F0F0F0;
+      align-items: center;
+    }
+    .wa-field {
+      flex: 1;
+      background: #fff;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 13.5px;
+      color: var(--ink);
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
+    .wa-field .placeholder { color: #999; }
+    .wa-field .cursor {
+      display: inline-block;
+      width: 2px; height: 16px;
+      background: var(--whatsapp-dark);
+      margin-left: 2px;
+      animation: blink 0.9s steps(2) infinite;
+    }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    .wa-send {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--whatsapp);
+      display: grid; place-items: center;
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    .wa-send.tap { transform: scale(0.82); }
+
+    /* ============================================================
+       CENA 3 — PAINEL RECEBENDO O PEDIDO
+       ============================================================ */
+    .panel {
+      width: 880px;
+      background: rgba(255, 255, 255, 0.045);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 28px 30px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      margin-bottom: 120px;
+      position: relative;
+    }
+    .panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+      color: #fff;
+    }
+    .panel-top .title { font-family: var(--font-head); font-weight: 700; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+    .panel-top .live {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--whatsapp);
+      background: rgba(37, 211, 102, 0.1);
+      padding: 6px 15px;
+      border-radius: 999px;
+    }
+    .panel-top .live .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--whatsapp);
+      animation: blink-dot 1.5s ease-in-out infinite;
+    }
+    @keyframes blink-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .panel-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .pcol .col-label {
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 12px;
+    }
+    .ocard {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 12px;
+      padding: 15px 17px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #fff;
+    }
+    .ocard .o-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px; }
+    .ocard .o-num { color: var(--gold-soft); }
+    .ocard .o-items { color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.5; }
+    .ocard .o-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .obadge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .obadge.prep { background: rgba(212, 160, 23, 0.16); color: var(--gold-soft); }
+    .obadge.ready { background: rgba(37, 211, 102, 0.16); color: var(--whatsapp); }
+
+    /* Pedido novo que entra com destaque */
+    .ocard.new {
+      opacity: 0;
+      transform: translateY(-22px) scale(0.96);
+      transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      border-color: rgba(212, 160, 23, 0.6);
+      box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.4);
+    }
+    .ocard.new.shown {
+      opacity: 1;
+      transform: none;
+      animation: glow-new 1.8s ease-in-out 0.5s 2;
+    }
+    @keyframes glow-new {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0); }
+      50% { box-shadow: 0 0 0 8px rgba(212, 160, 23, 0.18), 0 0 34px rgba(212, 160, 23, 0.25); }
+    }
+
+    /* Toast de notificação */
+    .toast {
+      position: absolute;
+      top: -26px;
+      right: 28px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 22px;
+      border-radius: 14px;
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(-18px) scale(0.94);
+      transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .toast.shown { opacity: 1; transform: none; }
+    .toast .bell { font-size: 20px; animation: ring 0.8s ease 0.4s 2; transform-origin: top center; }
+    @keyframes ring {
+      0%, 100% { transform: rotate(0); }
+      20% { transform: rotate(18deg); }
+      40% { transform: rotate(-14deg); }
+      60% { transform: rotate(9deg); }
+      80% { transform: rotate(-5deg); }
+    }
+
+    /* ============================================================
+       CENA 4 — IMPRESSORA IMPRIMINDO
+       ============================================================ */
+    .printer-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 110px; }
+
+    .printer {
+      width: 360px;
+      position: relative;
+      z-index: 3;
+    }
+    .printer .body {
+      background: linear-gradient(180deg, #3a3a4a 0%, #23232f 60%, #1b1b25 100%);
+      border-radius: 22px 22px 14px 14px;
+      padding: 26px 28px 20px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .printer .brand {
+      text-align: center;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      color: rgba(255, 255, 255, 0.45);
+      margin-bottom: 14px;
+    }
+    .printer .leds { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+    .printer .led {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #444;
+    }
+    .printer .led.power { background: var(--whatsapp); box-shadow: 0 0 10px rgba(37, 211, 102, 0.8); }
+    .printer .led.job { background: #444; }
+    .printer .led.job.active {
+      background: var(--gold);
+      box-shadow: 0 0 10px rgba(212, 160, 23, 0.9);
+      animation: led-blink 0.5s steps(2) infinite;
+    }
+    @keyframes led-blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.25; } }
+    .printer .slot {
+      height: 12px;
+      background: #08080d;
+      border-radius: 6px;
+      box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Papel saindo da impressora */
+    .paper-out {
+      width: 290px;
+      margin: -4px auto 0;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 3.4s linear;
+      position: relative;
+      z-index: 2;
+    }
+    .paper-out.printing { max-height: 420px; }
+    .paper {
+      background: #fff;
+      padding: 18px 20px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #1c1c1c;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    }
+    .paper::after {
+      content: '';
+      display: block;
+      margin: 14px -20px -24px;
+      height: 12px;
+      background:
+        linear-gradient(45deg, transparent 33.333%, #14141f 33.333%, #14141f 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #14141f 33.333%, #14141f 66.667%, transparent 66.667%);
+      background-size: 14px 24px;
+      background-position: 0 0;
+    }
+    .paper .p-title { text-align: center; font-weight: 700; font-size: 14px; letter-spacing: 0.06em; }
+    .paper .p-sep { border-top: 1.5px dashed #bbb; margin: 8px 0; }
+    .paper .p-row { display: flex; justify-content: space-between; gap: 8px; }
+    .paper .p-big { font-size: 15px; font-weight: 700; }
+
+    .print-done {
+      margin-top: 26px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(37, 211, 102, 0.1);
+      border: 1px solid rgba(37, 211, 102, 0.4);
+      color: var(--whatsapp);
+      font-weight: 700;
+      font-size: 17px;
+      padding: 12px 26px;
+      border-radius: 999px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .print-done.shown { opacity: 1; transform: none; }
+
+    /* ============================================================
+       CENA 5 — ENCERRAMENTO
+       ============================================================ */
+    .outro-logo { font-size: 80px; animation: pop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    .outro-name {
+      font-family: var(--font-head);
+      font-size: 46px;
+      font-weight: 800;
+      color: #fff;
+      margin: 16px 0 10px;
+      animation: rise-in 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .outro-name .red {
+      background: linear-gradient(120deg, #ff5470 10%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .outro-tag {
+      font-size: 23px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 30px;
+      animation: rise-in 0.8s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .outro-points {
+      display: flex;
+      gap: 16px;
+      animation: rise-in 0.8s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .outro-points span {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 600;
+      font-size: 15.5px;
+      padding: 11px 22px;
+      border-radius: 999px;
+    }
+    .replay-btn {
+      margin-top: 40px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      background: var(--grad);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 34px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(220, 20, 60, 0.4);
+      transition: transform 0.2s ease;
+      animation: rise-in 0.8s 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .replay-btn:hover { transform: translateY(-2px) scale(1.03); }
+
+    /* ============================================================
+       OVERLAY DE PLAY + BARRA DE PROGRESSO
+       ============================================================ */
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      background: rgba(6, 6, 9, 0.55);
+      backdrop-filter: blur(6px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      transition: opacity 0.45s ease, visibility 0.45s;
+    }
+    .play-overlay.hidden { opacity: 0; visibility: hidden; }
+    .play-btn {
+      width: 112px; height: 112px;
+      border-radius: 50%;
+      border: none;
+      background: var(--grad);
+      color: #fff;
+      font-size: 42px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 16px 50px rgba(220, 20, 60, 0.5);
+      transition: transform 0.25s ease;
+      animation: pulse-play 2.4s ease-in-out infinite;
+    }
+    .play-btn:hover { transform: scale(1.08); }
+    @keyframes pulse-play {
+      0%, 100% { box-shadow: 0 16px 50px rgba(220, 20, 60, 0.5), 0 0 0 0 rgba(220, 20, 60, 0.4); }
+      50% { box-shadow: 0 16px 50px rgba(220, 20, 60, 0.5), 0 0 0 26px rgba(220, 20, 60, 0); }
+    }
+    .play-overlay .hint { color: rgba(255, 255, 255, 0.75); font-size: 16px; font-weight: 500; }
+
+    .progress {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      z-index: 40;
+    }
+    .progress .bar {
+      height: 100%;
+      width: 0%;
+      background: var(--grad);
+      transition: width 0.3s linear;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="stage-wrap" id="stageWrap">
+    <div class="stage">
+
+      <!-- ===================== CENA 1: ABERTURA ===================== -->
+      <div class="scene on" id="scene-intro">
+        <div class="intro-logo">🥩</div>
+        <div class="intro-name">Açougue <span class="red">Inteligente</span></div>
+        <div class="intro-sub">Veja um pedido acontecendo de verdade — do WhatsApp até o balcão.</div>
+      </div>
+
+      <!-- ===================== CENA 2: WHATSAPP ===================== -->
+      <div class="scene" id="scene-whats">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="wa-header">
+              <div class="avatar">🥩</div>
+              <div>
+                <div class="name">Açougue do Zé</div>
+                <div class="status" id="waStatus">online</div>
+              </div>
+            </div>
+            <div class="wa-chat" id="waChat">
+              <div class="wa-msg client" id="msg0">Boa tarde! Quero 2kg de picanha, 1kg de fraldinha e meio quilo de linguiça toscana. Pego às 18h<span class="time">17:02</span></div>
+              <div class="wa-typing" id="waTyping"><i></i><i></i><i></i></div>
+              <div class="wa-msg bot" id="msg1">Oi! Confirmando seu pedido:
+🥩 2 kg — Picanha
+🥩 1 kg — Fraldinha
+🥩 0,5 kg — Linguiça Toscana
+📍 Retirada: 18:00
+
+Posso confirmar?<span class="time">17:02</span></div>
+              <div class="wa-msg client" id="msg2">Sim!<span class="time">17:03</span></div>
+              <div class="wa-msg bot" id="msg3">Pedido #42 confirmado! ✅
+Avisaremos quando estiver pronto. 🥩<span class="time">17:03</span></div>
+            </div>
+            <div class="wa-inputbar">
+              <div class="wa-field" id="waField"><span class="placeholder">Mensagem</span></div>
+              <div class="wa-send" id="waSend">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="caption">
+          <span class="step-tag">PASSO 1</span>
+          <div class="step-text">O cliente pede pelo WhatsApp — e a IA entende e confirma sozinha</div>
+        </div>
+      </div>
+
+      <!-- ===================== CENA 3: PAINEL ===================== -->
+      <div class="scene" id="scene-panel">
+        <div class="panel">
+          <div class="toast" id="panelToast"><span class="bell">🔔</span> Novo pedido recebido!</div>
+          <div class="panel-top">
+            <span class="title">🥩 Painel — Açougue do Zé</span>
+            <span class="live"><span class="dot"></span> Ao vivo</span>
+          </div>
+          <div class="panel-cols">
+            <div class="pcol">
+              <div class="col-label">🔥 Em preparo</div>
+              <div class="ocard new" id="newOrder">
+                <div class="o-head"><span class="o-num">#42</span><span>R$ 247,30</span></div>
+                <div class="o-items">2kg Picanha · 1kg Fraldinha · 0,5kg Linguiça Toscana</div>
+                <div class="o-foot"><span>João · Retirada 18:00</span><span class="obadge prep">Em preparo</span></div>
+              </div>
+              <div class="ocard">
+                <div class="o-head"><span class="o-num">#41</span><span>R$ 89,90</span></div>
+                <div class="o-items">1kg Alcatra · 1 Frango inteiro</div>
+                <div class="o-foot"><span>Marcia · Retirada 18:30</span><span class="obadge prep">Em preparo</span></div>
+              </div>
+            </div>
+            <div class="pcol">
+              <div class="col-label">✅ Prontos</div>
+              <div class="ocard">
+                <div class="o-head"><span class="o-num">#40</span><span>R$ 132,50</span></div>
+                <div class="o-items">1,5kg Costela · 0,5kg Coração</div>
+                <div class="o-foot"><span>Pedro · Retirada 17:45</span><span class="obadge ready">Pronto ✓</span></div>
+              </div>
+              <div class="ocard">
+                <div class="o-head"><span class="o-num">#39</span><span>R$ 64,00</span></div>
+                <div class="o-items">0,8kg Maminha</div>
+                <div class="o-foot"><span>Ana · Retirada 17:30</span><span class="obadge ready">Pronto ✓</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="caption">
+          <span class="step-tag">PASSO 2</span>
+          <div class="step-text">O pedido aparece no painel na hora — sem ninguém digitar nada</div>
+        </div>
+      </div>
+
+      <!-- ===================== CENA 4: IMPRESSORA ===================== -->
+      <div class="scene" id="scene-printer">
+        <div class="printer-area">
+          <div class="printer">
+            <div class="body">
+              <div class="brand">TÉRMICA · BALCÃO</div>
+              <div class="leds">
+                <span class="led power"></span>
+                <span class="led job" id="ledJob"></span>
+              </div>
+              <div class="slot"></div>
+            </div>
+          </div>
+          <div class="paper-out" id="paperOut">
+            <div class="paper">
+              <div class="p-title">AÇOUGUE DO ZÉ</div>
+              <div class="p-sep"></div>
+              <div class="p-row p-big"><span>PEDIDO</span><span>#42</span></div>
+              <div class="p-row"><span>Cliente:</span><span>João</span></div>
+              <div class="p-row"><span>Retirada:</span><span>18:00</span></div>
+              <div class="p-sep"></div>
+              <div class="p-row"><span>2,0 kg Picanha</span><span>R$ 159,80</span></div>
+              <div class="p-row"><span>1,0 kg Fraldinha</span><span>R$ 54,90</span></div>
+              <div class="p-row"><span>0,5 kg Ling. Toscana</span><span>R$ 32,60</span></div>
+              <div class="p-sep"></div>
+              <div class="p-row p-big"><span>TOTAL</span><span>R$ 247,30</span></div>
+            </div>
+          </div>
+          <span class="print-done" id="printDone">✓ Comanda impressa automaticamente</span>
+        </div>
+        <div class="caption">
+          <span class="step-tag">PASSO 3</span>
+          <div class="step-text">A comanda sai na térmica do balcão — é só preparar e entregar</div>
+        </div>
+      </div>
+
+      <!-- ===================== CENA 5: ENCERRAMENTO ===================== -->
+      <div class="scene" id="scene-outro">
+        <div class="outro-logo">🥩</div>
+        <div class="outro-name">Açougue <span class="red">Inteligente</span></div>
+        <div class="outro-tag">Seu açougue recebendo pedidos no automático, 24h por dia.</div>
+        <div class="outro-points">
+          <span>🤖 IA que entende o cliente</span>
+          <span>🖨️ Comanda automática</span>
+          <span>📊 Painel em tempo real</span>
+        </div>
+        <button class="replay-btn" id="replayBtn">▶ Assistir de novo</button>
+      </div>
+
+      <!-- Overlay de play + progresso -->
+      <div class="play-overlay" id="playOverlay">
+        <button class="play-btn" id="playBtn" aria-label="Reproduzir demonstração">▶</button>
+        <span class="hint">Clique para assistir à demonstração (≈ 40 segundos)</span>
+      </div>
+      <div class="progress"><div class="bar" id="progressBar"></div></div>
+
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ========================================================
+         ESCALA DO PALCO — mantém 16:9 em qualquer janela
+         ======================================================== */
+      var wrap = document.getElementById('stageWrap');
+      function fit() {
+        // Margens mínimas: o palco 1280x720 ocupa quase toda a janela.
+        var scale = Math.min(window.innerWidth / 1300, window.innerHeight / 736);
+        wrap.style.transform = 'scale(' + Math.min(scale, 1.8) + ')';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+
+      /* ========================================================
+         UTILITÁRIOS DA TIMELINE
+         ======================================================== */
+      var timers = [];
+      function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+      function clearAll() { timers.forEach(clearTimeout); timers = []; }
+
+      var scenes = ['scene-intro', 'scene-whats', 'scene-panel', 'scene-printer', 'scene-outro'];
+      function showScene(id) {
+        scenes.forEach(function (s) {
+          document.getElementById(s).classList.toggle('on', s === id);
+        });
+      }
+
+      var progressBar = document.getElementById('progressBar');
+      var TOTAL = 41000; // duração total aproximada (ms)
+      var progressTimer = null;
+      function startProgress() {
+        var t0 = Date.now();
+        progressTimer = setInterval(function () {
+          var pct = Math.min(((Date.now() - t0) / TOTAL) * 100, 100);
+          progressBar.style.width = pct + '%';
+          if (pct >= 100) clearInterval(progressTimer);
+        }, 200);
+      }
+
+      /* ========================================================
+         CENA 2 — digitação no campo + bolhas
+         ======================================================== */
+      var waField = document.getElementById('waField');
+      var waSend = document.getElementById('waSend');
+      var waStatus = document.getElementById('waStatus');
+      var waChat = document.getElementById('waChat');
+      var waTyping = document.getElementById('waTyping');
+
+      function typeInField(texto, durMs, doneFn) {
+        waField.innerHTML = '';
+        var span = document.createElement('span');
+        var cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        waField.appendChild(span);
+        waField.appendChild(cursor);
+
+        var i = 0;
+        var passo = Math.max(durMs / texto.length, 14);
+        var int = setInterval(function () {
+          i++;
+          span.textContent = texto.slice(0, i);
+          if (i >= texto.length) {
+            clearInterval(int);
+            if (doneFn) doneFn();
+          }
+        }, passo);
+        timers.push(int);
+      }
+
+      function tapSend() {
+        waSend.classList.add('tap');
+        setTimeout(function () { waSend.classList.remove('tap'); }, 180);
+        waField.innerHTML = '<span class="placeholder">Mensagem</span>';
+      }
+
+      function showMsg(id) {
+        document.getElementById(id).classList.add('shown');
+        waChat.scrollTop = waChat.scrollHeight;
+      }
+
+      function setTyping(on) {
+        waTyping.classList.toggle('shown', on);
+        waStatus.innerHTML = on ? '<span class="typing-label">digitando…</span>' : 'online';
+        waChat.scrollTop = waChat.scrollHeight;
+      }
+
+      /* ========================================================
+         RESET — volta tudo ao estado inicial (para replay)
+         ======================================================== */
+      function resetAll() {
+        clearAll();
+        if (progressTimer) clearInterval(progressTimer);
+        progressBar.style.width = '0%';
+
+        ['msg0', 'msg1', 'msg2', 'msg3'].forEach(function (id) {
+          document.getElementById(id).classList.remove('shown');
+        });
+        setTyping(false);
+        waField.innerHTML = '<span class="placeholder">Mensagem</span>';
+
+        document.getElementById('newOrder').classList.remove('shown');
+        document.getElementById('panelToast').classList.remove('shown');
+
+        document.getElementById('paperOut').classList.remove('printing');
+        document.getElementById('ledJob').classList.remove('active');
+        document.getElementById('printDone').classList.remove('shown');
+
+        showScene('scene-intro');
+      }
+
+      /* ========================================================
+         A TIMELINE DO "VÍDEO"
+         ======================================================== */
+      function play() {
+        resetAll();
+        startProgress();
+
+        /* ---- CENA 1: abertura (0 – 3.2s) ---- */
+        showScene('scene-intro');
+
+        /* ---- CENA 2: WhatsApp (3.2s – 21s) ---- */
+        at(3200, function () { showScene('scene-whats'); });
+
+        // Cliente digita a mensagem no campo e envia
+        at(4200, function () {
+          typeInField('Boa tarde! Quero 2kg de picanha, 1kg de fraldinha e meio quilo de linguiça toscana. Pego às 18h', 3400);
+        });
+        at(7900, function () { tapSend(); showMsg('msg0'); });
+
+        // IA "digitando…" e responde com o resumo
+        at(8700, function () { setTyping(true); });
+        at(11200, function () { setTyping(false); showMsg('msg1'); });
+
+        // Cliente digita "Sim!" e envia
+        at(14200, function () { typeInField('Sim!', 700); });
+        at(15200, function () { tapSend(); showMsg('msg2'); });
+
+        // IA confirma o pedido
+        at(15900, function () { setTyping(true); });
+        at(17400, function () { setTyping(false); showMsg('msg3'); });
+
+        /* ---- CENA 3: painel (21s – 28.5s) ---- */
+        at(21000, function () { showScene('scene-panel'); });
+        at(22000, function () {
+          document.getElementById('panelToast').classList.add('shown');
+          document.getElementById('newOrder').classList.add('shown');
+        });
+        at(26500, function () {
+          document.getElementById('panelToast').classList.remove('shown');
+        });
+
+        /* ---- CENA 4: impressora (28.5s – 37s) ---- */
+        at(28500, function () { showScene('scene-printer'); });
+        at(29300, function () {
+          document.getElementById('ledJob').classList.add('active');
+          document.getElementById('paperOut').classList.add('printing');
+        });
+        at(33200, function () {
+          document.getElementById('ledJob').classList.remove('active');
+          document.getElementById('printDone').classList.add('shown');
+        });
+
+        /* ---- CENA 5: encerramento (37s+) ---- */
+        at(37000, function () { showScene('scene-outro'); });
+      }
+
+      /* ========================================================
+         CONTROLES
+         ======================================================== */
+      var overlay = document.getElementById('playOverlay');
+      document.getElementById('playBtn').addEventListener('click', function () {
+        overlay.classList.add('hidden');
+        play();
+      });
+      document.getElementById('replayBtn').addEventListener('click', play);
+
+      // Tecla F = tela cheia (útil para apresentar/gravar)
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'f' || e.key === 'F') {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+          else document.exitFullscreen();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
