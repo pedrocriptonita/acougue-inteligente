@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proposta Comercial — Açougue Inteligente</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --crimson: #DC143C;
+      --crimson-dark: #A60F2D;
+      --gold: #D4A017;
+      --ink: #1A1A2E;
+      --ink-soft: #4A4A4A;
+      --bg-alt: #F8F9FA;
+      --border: rgba(26, 26, 46, 0.1);
+      --whatsapp: #25D366;
+      --grad: linear-gradient(135deg, #DC143C 0%, #C8392B 55%, #D4A017 130%);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--ink);
+      background: #e9e9ee;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    h1, h2, h3 { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.02em; }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 24px auto;
+      background: #fff;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      padding: 14mm 16mm;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: auto; min-height: auto; margin: 0; box-shadow: none; padding: 8mm 10mm; }
+      .no-print { display: none !important; }
+    }
+
+    @media (max-width: 820px) {
+      .page { width: auto; min-height: auto; margin: 0; padding: 24px 20px; }
+      .price-row { flex-direction: column; }
+    }
+
+    /* ---------- Cabeçalho ---------- */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 3px solid;
+      border-image: var(--grad) 1;
+      margin-bottom: 18px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 19px;
+    }
+    .logo .emoji { font-size: 24px; }
+    .logo .red { color: var(--crimson); }
+    .doc-meta { text-align: right; font-size: 12px; color: var(--ink-soft); }
+    .doc-meta strong { color: var(--ink); }
+
+    .founder-badge {
+      display: inline-block;
+      background: var(--grad);
+      color: #fff;
+      font-weight: 700;
+      font-size: 11.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    h1 { font-size: 25px; font-weight: 800; margin-bottom: 6px; }
+    .intro { color: var(--ink-soft); font-size: 14px; max-width: 640px; margin-bottom: 16px; }
+    .intro strong { color: var(--ink); }
+
+    /* ---------- Seções ---------- */
+    .section { margin-bottom: 15px; }
+    .section h2 {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--crimson);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section h2::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ---------- Entregas (grid) ---------- */
+    .deliver-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px 14px;
+    }
+    .deliver-grid .item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+    .deliver-grid .item b { color: var(--ink); }
+    .deliver-grid .check { color: var(--whatsapp); font-weight: 700; flex-shrink: 0; }
+
+    /* ---------- Investimento ---------- */
+    .price-row { display: flex; gap: 12px; }
+    .price-box {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      position: relative;
+    }
+    .price-box.hot { border-color: var(--gold); background: linear-gradient(180deg, rgba(212, 160, 23, 0.06), transparent); }
+    .price-box .label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-soft); }
+    .price-box .value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 27px;
+      font-weight: 800;
+      margin: 2px 0;
+    }
+    .price-box .value .strike {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-decoration: line-through;
+      margin-right: 7px;
+    }
+    .price-box .note { font-size: 12px; color: var(--ink-soft); }
+    .price-box .tag {
+      position: absolute;
+      top: -10px; right: 12px;
+      background: var(--gold);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .bonus {
+      margin-top: 10px;
+      background: rgba(37, 211, 102, 0.08);
+      border: 1px solid rgba(37, 211, 102, 0.35);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+    .bonus b { color: #128C7E; }
+
+    /* ---------- Cronograma ---------- */
+    .timeline { display: flex; gap: 10px; }
+    .t-step {
+      flex: 1;
+      background: var(--bg-alt);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+    }
+    .t-step .when {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 12.5px;
+      color: var(--crimson);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    /* ---------- Condições ---------- */
+    .terms { font-size: 12.5px; color: var(--ink-soft); }
+    .terms li { display: flex; gap: 7px; padding: 2.5px 0; list-style: none; }
+    .terms li::before { content: '•'; color: var(--gold); font-weight: 700; }
+
+    /* ---------- Aceite ---------- */
+    .accept {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+    }
+    .sign { flex: 1; text-align: center; font-size: 12px; color: var(--ink-soft); }
+    .sign .line { border-top: 1.5px solid var(--ink); margin-bottom: 5px; padding-top: 4px; }
+    .accept-cta {
+      flex-shrink: 0;
+      text-align: center;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+    .accept-cta .wa {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--whatsapp);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      text-decoration: none;
+      margin-bottom: 4px;
+    }
+
+    .validade {
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      margin-top: 12px;
+    }
+    .validade b { color: var(--crimson); }
+
+    /* ---------- Barra de impressão ---------- */
+    .printbar {
+      position: fixed;
+      bottom: 18px; right: 18px;
+      display: flex;
+      gap: 10px;
+    }
+    .printbar button {
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+      background: var(--grad);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(220, 20, 60, 0.35);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+
+    <!-- Cabeçalho -->
+    <div class="top">
+      <div class="logo">
+        <span class="emoji">🥩</span>
+        <span>Açougue <span class="red">Inteligente</span></span>
+      </div>
+      <div class="doc-meta">
+        Proposta comercial nº <strong>001/2026</strong><br />
+        Data: <strong>____ / ____ / 2026</strong><br />
+        Preparada para: <strong>[NOME DO AÇOUGUE]</strong>
+      </div>
+    </div>
+
+    <!-- Abertura -->
+    <span class="founder-badge">⭐ Condição exclusiva de Cliente Fundador</span>
+    <h1>Seu açougue recebendo pedidos no automático, 24h por dia.</h1>
+    <p class="intro">
+      <strong>[Nome do dono]</strong>, esta proposta é para colocar o Açougue Inteligente funcionando no seu balcão:
+      o cliente manda o pedido no seu WhatsApp, a inteligência artificial entende, confirma com ele e
+      <strong>a comanda sai impressa na térmica</strong> — enquanto você cuida do que sabe fazer: cortar carne.
+    </p>
+
+    <!-- O que está incluso -->
+    <div class="section">
+      <h2>O que você recebe</h2>
+      <div class="deliver-grid">
+        <div class="item"><span class="check">✓</span><span><b>Atendente com IA no seu WhatsApp</b> — entende "meio quilo de alcatra", "um frango inteiro", horário de retirada, e responde em segundos, 24h.</span></div>
+        <div class="item"><span class="check">✓</span><span><b>Comanda impressa automática</b> — sai na impressora térmica do balcão com número do pedido, cliente, itens e horário de retirada.</span></div>
+        <div class="item"><span class="check">✓</span><span><b>Confirmação antes de criar o pedido</b> — a IA sempre resume e pergunta "posso confirmar?". Pedido errado não entra.</span></div>
+        <div class="item"><span class="check">✓</span><span><b>Painel em tempo real</b> — todos os pedidos organizados por status (em preparo, pronto, concluído), no computador ou celular.</span></div>
+        <div class="item"><span class="check">✓</span><span><b>Aviso automático ao cliente</b> — marcou como pronto, o cliente recebe no WhatsApp: "Seu pedido está pronto para retirada!"</span></div>
+        <div class="item"><span class="check">✓</span><span><b>Atendimento humano garantido</b> — se a IA não entender, a conversa vai para você. Nenhum cliente fica sem resposta.</span></div>
+      </div>
+    </div>
+
+    <!-- Setup incluso -->
+    <div class="section">
+      <h2>Implantação completa (eu faço tudo)</h2>
+      <div class="deliver-grid">
+        <div class="item"><span class="check">✓</span><span>Conexão do WhatsApp do açougue ao sistema</span></div>
+        <div class="item"><span class="check">✓</span><span>Instalação e configuração da impressora térmica</span></div>
+        <div class="item"><span class="check">✓</span><span>Configuração do painel com os dados da sua loja</span></div>
+        <div class="item"><span class="check">✓</span><span>Testes reais no balcão, junto com você</span></div>
+        <div class="item"><span class="check">✓</span><span>Treinamento da equipe (leva menos de 30 minutos)</span></div>
+        <div class="item"><span class="check">✓</span><span>Acompanhamento de perto nas primeiras semanas</span></div>
+      </div>
+    </div>
+
+    <!-- Investimento -->
+    <div class="section">
+      <h2>Investimento — condição de fundador</h2>
+      <div class="price-row">
+        <div class="price-box hot">
+          <span class="tag">Economia de R$ 500</span>
+          <span class="label">Implantação (pagamento único)</span>
+          <div class="value"><span class="strike">R$ 997</span>R$ 497</div>
+          <span class="note">Tudo instalado, testado e funcionando no seu balcão.</span>
+        </div>
+        <div class="price-box">
+          <span class="label">Mensalidade</span>
+          <div class="value">R$ 247,90<span style="font-size:14px; font-weight:600; color:var(--ink-soft);">/mês</span></div>
+          <span class="note">Pedidos ilimitados · IA 24h · painel completo · suporte direto comigo no WhatsApp.</span>
+        </div>
+      </div>
+      <div class="bonus" style="background: rgba(212, 160, 23, 0.08); border-color: rgba(212, 160, 23, 0.4);">
+        💡 <b style="color: var(--gold);">Prefere pagar uma vez por ano?</b> Plano anual por <b>R$ 2.479 à vista</b> — equivale a 10 mensalidades, ou seja, <b>2 meses grátis</b> (economia de R$ 495,80 por ano, todo ano).
+      </div>
+      <div class="bonus">
+        🎁 <b>Bônus de fundador:</b> os primeiros <b>30 dias de mensalidade são por minha conta</b>, enquanto afinamos o sistema na rotina do seu açougue — vale para o plano mensal ou anual (o ano só começa a contar depois deles). Você só começa a pagar quando já estiver vendendo com o sistema. Além disso, <b>seu preço fica travado</b>: nunca pagará mais que R$ 247,90/mês, mesmo quando o preço subir para os próximos clientes.
+      </div>
+    </div>
+
+    <!-- Cronograma -->
+    <div class="section">
+      <h2>Como começamos</h2>
+      <div class="timeline">
+        <div class="t-step"><span class="when">Dia 1</span>Aceite da proposta e pagamento da implantação. Já inicio a preparação do WhatsApp da loja.</div>
+        <div class="t-step"><span class="when">Semana 1–2</span>Instalação da impressora, configuração do painel e testes reais no balcão com você.</div>
+        <div class="t-step"><span class="when">Semana 3</span>Sistema no ar atendendo seus clientes. Eu acompanho de perto e ajusto o que precisar.</div>
+        <div class="t-step"><span class="when">Dia 30+</span>Começa o plano escolhido (mensal ou anual). Você já viu o resultado antes de pagar a primeira.</div>
+      </div>
+    </div>
+
+    <!-- Condições -->
+    <div class="section">
+      <h2>Condições simples e justas</h2>
+      <ul class="terms">
+        <li><b>Sem fidelidade e sem multa</b> — cancele quando quiser, direto comigo.</li>
+        <li>A implantação inclui equipamento configurado, mas <b>não inclui</b> a impressora térmica em si (se você ainda não tiver uma, te indico modelos a partir de ~R$ 350).</li>
+        <li>Como cliente fundador, você topa me dar retorno sobre o uso e, se ficar satisfeito, um depoimento para eu mostrar aos próximos clientes.</li>
+        <li>Seus dados (pedidos e clientes) são só seus, em banco seguro e isolado.</li>
+      </ul>
+    </div>
+
+    <!-- Aceite -->
+    <div class="accept">
+      <div class="sign">
+        <div class="line">&nbsp;</div>
+        [NOME DO AÇOUGUE] — Responsável
+      </div>
+      <div class="sign">
+        <div class="line">&nbsp;</div>
+        Pedro Bruno da Silva — Açougue Inteligente
+      </div>
+      <div class="accept-cta no-print">
+        <a class="wa" href="https://wa.me/5500000000000?text=Fechado!%20Quero%20come%C3%A7ar%20com%20o%20A%C3%A7ougue%20Inteligente." target="_blank" rel="noopener noreferrer">✓ Aceitar pelo WhatsApp</a><br />
+        ou assine e me devolva esta página
+      </div>
+    </div>
+
+    <p class="validade">Esta condição de <b>Cliente Fundador</b> vale para assinatura até ____ / ____ / 2026 (7 dias). Depois disso, valem os preços de tabela (implantação R$ 997).</p>
+  </div>
+
+  <!-- Botão de imprimir / salvar PDF (não sai na impressão) -->
+  <div class="printbar no-print">
+    <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+
+</body>
+</html>

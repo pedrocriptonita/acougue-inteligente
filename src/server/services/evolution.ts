@@ -43,6 +43,34 @@ type SendTextResponse = {
 };
 
 /**
+ * Espera um intervalo que IMITA o tempo de digitação de um atendente humano,
+ * antes de o bot responder. Responder em milissegundos é o principal sinal de
+ * automação que o WhatsApp usa para banir números — este atraso reduz esse
+ * risco (a Evolution API é não oficial; ver aviso no topo do arquivo).
+ *
+ * O tempo é proporcional ao tamanho do texto (mensagem maior "demora mais para
+ * digitar"), com piso e teto, mais uma variação aleatória para não ficar
+ * mecânico. Para um texto típico de confirmação (~120 chars) dá ~3–5 s.
+ *
+ * @param texto    a mensagem que será enviada (define a base do tempo)
+ * @param opcoes   limites em ms; úteis para testes (valores menores) e ajuste.
+ */
+export async function delayHumanizado(
+  texto: string,
+  opcoes: { minMs?: number; maxMs?: number; msPorCaractere?: number } = {}
+): Promise<void> {
+  const { minMs = 1500, maxMs = 6000, msPorCaractere = 35 } = opcoes;
+
+  // Base: tempo de "digitação" proporcional ao tamanho do texto.
+  const base = texto.length * msPorCaractere;
+  // Variação de ±25% para não ser sempre o mesmo valor para o mesmo texto.
+  const jitter = base * (Math.random() * 0.5 - 0.25);
+  const espera = Math.min(maxMs, Math.max(minMs, base + jitter));
+
+  await new Promise((resolve) => setTimeout(resolve, espera));
+}
+
+/**
  * Envia uma mensagem de texto para um número de WhatsApp.
  * Retorna o ID da mensagem (quando disponível) para rastreio/idempotência.
  */

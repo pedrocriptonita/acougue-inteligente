@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Açougue Inteligente — Pedidos no automático pelo WhatsApp, 24h por dia</title>
+  <meta name="description" content="A IA que atende o WhatsApp do seu açougue, confirma o pedido e imprime a comanda na térmica. Venda mais sem contratar ninguém. Teste grátis por 14 dias, sem cartão." />
+  <meta name="keywords" content="açougue, pedidos whatsapp, automação açougue, comanda automática, ia para açougue" />
+  <meta name="author" content="Açougue Inteligente" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Açougue Inteligente — Seu açougue recebendo pedidos no automático, 24h por dia" />
+  <meta property="og:description" content="O cliente pede pelo WhatsApp, a IA entende, confirma e a comanda sai na impressora. Teste grátis por 14 dias." />
+  <meta property="og:url" content="https://acougueinteligente.com.br" />
+  <meta property="og:image" content="https://acougueinteligente.com.br/og-image.png" />
+  <meta property="og:locale" content="pt_BR" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Açougue Inteligente — Pedidos no automático pelo WhatsApp" />
+  <meta name="twitter:description" content="A IA que atende o WhatsApp do seu açougue, confirma o pedido e imprime a comanda. 14 dias grátis." />
+  <meta name="twitter:image" content="https://acougueinteligente.com.br/og-image.png" />
+
+  <!-- Favicon emoji 🥩 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       RESET + TOKENS
+       ============================================================ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --crimson: #DC143C;
+      --crimson-dark: #A60F2D;
+      --crimson-deep: #7A0B21;
+      --gold: #D4A017;
+      --gold-soft: #C8A951;
+      --whatsapp: #25D366;
+      --whatsapp-dark: #128C7E;
+      --ink: #1A1A2E;
+      --ink-soft: #4A4A4A;
+      --bg: #FFFFFF;
+      --bg-alt: #F8F9FA;
+      --bg-dark: #14141f;
+      --card-border: rgba(26, 26, 46, 0.08);
+      --shadow-sm: 0 2px 8px rgba(26, 26, 46, 0.06);
+      --shadow-md: 0 8px 30px rgba(26, 26, 46, 0.1);
+      --shadow-lg: 0 20px 60px rgba(26, 26, 46, 0.15);
+      --radius: 12px;
+      --radius-lg: 16px;
+      --grad-cta: linear-gradient(135deg, #DC143C 0%, #C8392B 55%, #D4A017 130%);
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-head: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4 { font-family: var(--font-head); line-height: 1.18; letter-spacing: -0.02em; }
+
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    ul { list-style: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+    .container { width: min(1140px, 92%); margin: 0 auto; }
+
+    section { padding: 96px 0; }
+    section.alt { background: var(--bg-alt); }
+
+    .section-head { text-align: center; max-width: 680px; margin: 0 auto 64px; }
+    .section-head .kicker {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--crimson);
+      background: rgba(220, 20, 60, 0.08);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .section-head h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 800; margin-bottom: 14px; }
+    .section-head p { color: var(--ink-soft); font-size: 18px; }
+
+    /* ============================================================
+       SCROLL REVEAL
+       ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal.d1 { transition-delay: 0.1s; }
+    .reveal.d2 { transition-delay: 0.2s; }
+    .reveal.d3 { transition-delay: 0.3s; }
+    .reveal.d4 { transition-delay: 0.4s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      html { scroll-behavior: auto; }
+      * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    /* ============================================================
+       BOTÕES
+       ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 16px 32px;
+      border-radius: var(--radius);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--grad-cta);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(220, 20, 60, 0.32);
+    }
+    .btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 32px rgba(220, 20, 60, 0.42); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 2px solid var(--card-border);
+    }
+    .btn-ghost:hover { border-color: var(--crimson); color: var(--crimson); transform: translateY(-2px); }
+    .btn-lg { font-size: 18px; padding: 19px 40px; border-radius: 14px; }
+
+    .btn-pulse { animation: pulse-cta 2.6s ease-in-out infinite; }
+    @keyframes pulse-cta {
+      0%, 100% { box-shadow: 0 8px 24px rgba(220, 20, 60, 0.32), 0 0 0 0 rgba(220, 20, 60, 0.35); }
+      50% { box-shadow: 0 8px 24px rgba(220, 20, 60, 0.32), 0 0 0 14px rgba(220, 20, 60, 0); }
+    }
+
+    /* ============================================================
+       NAVBAR
+       ============================================================ */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(26, 26, 46, 0.06);
+      transition: box-shadow 0.3s ease;
+    }
+    .navbar.scrolled { box-shadow: var(--shadow-sm); }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+    .logo .logo-emoji { font-size: 26px; }
+    .logo .gold { color: var(--crimson); }
+
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      transition: color 0.2s ease;
+    }
+    .nav-links a:hover { color: var(--crimson); }
+    .nav-cta { display: flex; align-items: center; gap: 14px; }
+    .nav-cta .btn { padding: 11px 22px; font-size: 15px; }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      padding: 8px;
+      z-index: 130;
+    }
+    .hamburger span {
+      width: 24px; height: 2.5px;
+      background: var(--ink);
+      border-radius: 2px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+    .mobile-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .mobile-menu.open { opacity: 1; visibility: visible; }
+    .mobile-menu a { font-family: var(--font-head); font-size: 24px; font-weight: 700; }
+    .mobile-menu a:hover { color: var(--crimson); }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .hero {
+      padding: 168px 0 110px;
+      background:
+        radial-gradient(900px 500px at 85% -10%, rgba(212, 160, 23, 0.1), transparent 60%),
+        radial-gradient(800px 520px at -5% 20%, rgba(220, 20, 60, 0.07), transparent 60%),
+        var(--bg);
+      overflow: hidden;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 56px;
+      align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      background: #fff;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-sm);
+      padding: 8px 16px;
+      border-radius: 999px;
+      margin-bottom: 24px;
+    }
+    .hero-badge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--whatsapp);
+      animation: blink-dot 1.8s ease-in-out infinite;
+    }
+    @keyframes blink-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    .hero h1 {
+      font-size: clamp(34px, 5vw, 56px);
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+    .hero h1 .hl {
+      background: linear-gradient(120deg, var(--crimson) 20%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero .sub {
+      font-size: 19px;
+      color: var(--ink-soft);
+      max-width: 520px;
+      margin-bottom: 34px;
+    }
+    .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+    .hero-trust {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+    .hero-trust svg { flex-shrink: 0; }
+
+    /* --- Ilustração hero: celular → comanda --- */
+    .hero-visual { position: relative; display: flex; align-items: center; justify-content: center; gap: 0; }
+
+    .mini-phone {
+      width: 230px;
+      background: var(--ink);
+      border-radius: 30px;
+      padding: 10px;
+      box-shadow: var(--shadow-lg);
+      transform: rotate(-4deg);
+      animation: float-a 6s ease-in-out infinite;
+      position: relative;
+      z-index: 2;
+    }
+    @keyframes float-a { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(-4deg) translateY(-12px); } }
+    .mini-phone .screen {
+      background: #ECE5DD;
+      border-radius: 22px;
+      overflow: hidden;
+    }
+    .mini-phone .wa-bar {
+      background: var(--whatsapp-dark);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mini-phone .wa-bar .avatar {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--gold);
+      display: grid; place-items: center;
+      font-size: 12px;
+    }
+    .mini-phone .chat { padding: 12px 10px 16px; display: flex; flex-direction: column; gap: 8px; min-height: 230px; }
+    .bubble {
+      max-width: 88%;
+      font-size: 11.5px;
+      line-height: 1.45;
+      padding: 8px 11px;
+      border-radius: 10px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+    }
+    .bubble.out { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 3px; }
+    .bubble.in { align-self: flex-start; background: #fff; border-bottom-left-radius: 3px; }
+
+    .flow-arrow {
+      position: relative;
+      z-index: 3;
+      margin: 0 -18px;
+      width: 86px;
+      flex-shrink: 0;
+      animation: arrow-slide 2.2s ease-in-out infinite;
+    }
+    @keyframes arrow-slide { 0%, 100% { transform: translateX(0); opacity: 0.9; } 50% { transform: translateX(8px); opacity: 1; } }
+
+    .receipt {
+      width: 210px;
+      background: #fff;
+      border-radius: 6px 6px 0 0;
+      box-shadow: var(--shadow-lg);
+      padding: 18px 16px 26px;
+      font-family: 'Courier New', monospace;
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: #222;
+      transform: rotate(3deg);
+      position: relative;
+      z-index: 2;
+      animation: float-b 6s ease-in-out infinite 0.6s;
+    }
+    @keyframes float-b { 0%, 100% { transform: rotate(3deg) translateY(0); } 50% { transform: rotate(3deg) translateY(-10px); } }
+    .receipt::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -10px;
+      height: 12px;
+      background:
+        linear-gradient(45deg, transparent 33.333%, #fff 33.333%, #fff 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #fff 33.333%, #fff 66.667%, transparent 66.667%);
+      background-size: 14px 24px;
+      background-position: 0 -12px;
+    }
+    .receipt .r-title { text-align: center; font-weight: 700; font-size: 13px; letter-spacing: 0.06em; }
+    .receipt .r-sep { border-top: 1.5px dashed #bbb; margin: 8px 0; }
+    .receipt .r-row { display: flex; justify-content: space-between; gap: 8px; }
+    .receipt .r-big { font-size: 14px; font-weight: 700; }
+    .receipt .r-tag {
+      margin-top: 10px;
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--whatsapp-dark);
+      background: rgba(37, 211, 102, 0.12);
+      border-radius: 4px;
+      padding: 4px;
+    }
+
+    /* ============================================================
+       BARRA DE CREDIBILIDADE
+       ============================================================ */
+    .stats {
+      background: var(--bg-dark);
+      color: #fff;
+      padding: 56px 0;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+      text-align: center;
+    }
+    .stat .stat-num {
+      font-family: var(--font-head);
+      font-size: clamp(30px, 3.6vw, 44px);
+      font-weight: 800;
+      background: linear-gradient(120deg, #fff 30%, var(--gold-soft));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat .stat-label { font-size: 14.5px; color: rgba(255, 255, 255, 0.65); margin-top: 6px; }
+    .stat .stat-icon { font-size: 24px; margin-bottom: 8px; }
+
+    /* ============================================================
+       ANTES / DEPOIS
+       ============================================================ */
+    .ba-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+    .ba-card {
+      border-radius: var(--radius-lg);
+      padding: 38px 34px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .ba-card:hover { transform: translateY(-4px); }
+    .ba-card.before {
+      background: #fff;
+      border: 1.5px solid rgba(220, 20, 60, 0.18);
+      box-shadow: var(--shadow-sm);
+    }
+    .ba-card.after {
+      background: linear-gradient(160deg, #1d1d2e 0%, #14141f 100%);
+      color: #fff;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(212, 160, 23, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .ba-card.after::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(212, 160, 23, 0.18), transparent 70%);
+      pointer-events: none;
+    }
+    .ba-tag {
+      display: inline-block;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+    .ba-card.before .ba-tag { background: rgba(220, 20, 60, 0.1); color: var(--crimson); }
+    .ba-card.after .ba-tag { background: rgba(37, 211, 102, 0.16); color: var(--whatsapp); }
+    .ba-card h3 { font-size: 22px; margin-bottom: 22px; }
+    .ba-card.after h3 .gold-text { color: var(--gold-soft); }
+    .ba-card li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 0;
+      font-size: 16px;
+    }
+    .ba-card.before li { color: var(--ink-soft); border-bottom: 1px dashed rgba(26, 26, 46, 0.08); }
+    .ba-card.after li { color: rgba(255, 255, 255, 0.88); border-bottom: 1px dashed rgba(255, 255, 255, 0.1); }
+    .ba-card li:last-child { border-bottom: none; }
+    .ba-card li .mark { flex-shrink: 0; font-size: 17px; line-height: 1.5; }
+
+    /* ============================================================
+       COMO FUNCIONA
+       ============================================================ */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      counter-reset: step;
+    }
+    .step-card {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 38px 30px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .step-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+    .step-num {
+      position: absolute;
+      top: 26px; right: 26px;
+      font-family: var(--font-head);
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1;
+      color: rgba(220, 20, 60, 0.08);
+    }
+    .step-icon {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+      margin-bottom: 22px;
+      background: linear-gradient(135deg, rgba(220, 20, 60, 0.1), rgba(212, 160, 23, 0.12));
+    }
+    .step-card h3 { font-size: 20px; margin-bottom: 12px; }
+    .step-card p { color: var(--ink-soft); font-size: 15.5px; }
+    .step-card .ex {
+      margin-top: 16px;
+      font-size: 14px;
+      background: var(--bg-alt);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    /* ============================================================
+       FUNCIONALIDADES
+       ============================================================ */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+    }
+    .feature-card {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 30px 26px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px) scale(1.015);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(212, 160, 23, 0.45);
+    }
+    .feature-card .f-icon { font-size: 32px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 17px; margin-bottom: 8px; }
+    .feature-card p { font-size: 14.5px; color: var(--ink-soft); }
+
+    /* ============================================================
+       DEMONSTRAÇÃO
+       ============================================================ */
+    .demo { background: var(--bg-dark); color: #fff; }
+    .demo .section-head h2 { color: #fff; }
+    .demo .section-head p { color: rgba(255, 255, 255, 0.65); }
+    .demo .section-head .kicker { background: rgba(212, 160, 23, 0.14); color: var(--gold-soft); }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 56px;
+      align-items: center;
+    }
+
+    /* --- Phone mockup grande --- */
+    .phone-frame {
+      width: 320px;
+      margin: 0 auto;
+      background: #0a0a12;
+      border-radius: 42px;
+      padding: 12px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+    }
+    .phone-screen {
+      background: #ECE5DD;
+      border-radius: 32px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 560px;
+    }
+    .wa-header {
+      background: var(--whatsapp-dark);
+      color: #fff;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .wa-header .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--crimson), var(--gold));
+      display: grid; place-items: center;
+      font-size: 19px;
+    }
+    .wa-header .wa-name { font-size: 15px; font-weight: 700; line-height: 1.2; }
+    .wa-header .wa-status { font-size: 11.5px; color: rgba(255, 255, 255, 0.75); }
+
+    .wa-chat {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      background-image:
+        radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+    .wa-msg {
+      max-width: 84%;
+      font-size: 13.5px;
+      line-height: 1.5;
+      padding: 9px 13px;
+      border-radius: 12px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translateY(14px) scale(0.97);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: pre-line;
+    }
+    .wa-msg.shown { opacity: 1; transform: translateY(0) scale(1); }
+    .wa-msg.from-client { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 4px; }
+    .wa-msg.from-bot { align-self: flex-start; background: #fff; border-bottom-left-radius: 4px; }
+    .wa-msg .msg-time {
+      display: block;
+      text-align: right;
+      font-size: 10px;
+      color: rgba(0, 0, 0, 0.4);
+      margin-top: 3px;
+    }
+
+    .typing {
+      align-self: flex-start;
+      background: #fff;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      padding: 12px 16px;
+      display: none;
+      gap: 5px;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    }
+    .typing.shown { display: flex; }
+    .typing i {
+      width: 7px; height: 7px;
+      background: #999;
+      border-radius: 50%;
+      animation: typing-dot 1.2s ease-in-out infinite;
+    }
+    .typing i:nth-child(2) { animation-delay: 0.18s; }
+    .typing i:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes typing-dot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+    .wa-input {
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #F0F0F0;
+    }
+    .wa-input .fake-field {
+      flex: 1;
+      background: #fff;
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 13px;
+      color: #999;
+    }
+    .wa-input .send-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--whatsapp);
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+
+    /* --- Mockup do painel --- */
+    .panel-mock {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    }
+    .panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .panel-top .p-title { font-family: var(--font-head); font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    .panel-top .p-live {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--whatsapp);
+      background: rgba(37, 211, 102, 0.1);
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+    .panel-top .p-live .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--whatsapp);
+      animation: blink-dot 1.6s ease-in-out infinite;
+    }
+    .panel-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panel-col .col-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .order-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 10px;
+      padding: 13px 14px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+    .order-card:hover { transform: translateY(-2px); border-color: rgba(212, 160, 23, 0.4); }
+    .order-card .o-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 5px; }
+    .order-card .o-num { color: var(--gold-soft); }
+    .order-card .o-items { color: rgba(255, 255, 255, 0.7); font-size: 12.5px; line-height: 1.45; }
+    .order-card .o-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 9px;
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .o-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+    .o-badge.prep { background: rgba(212, 160, 23, 0.16); color: var(--gold-soft); }
+    .o-badge.ready { background: rgba(37, 211, 102, 0.16); color: var(--whatsapp); }
+
+    /* ============================================================
+       PREÇOS
+       ============================================================ */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 26px;
+      align-items: stretch;
+    }
+    .price-card {
+      background: #fff;
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .price-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: var(--shadow-md); }
+    .price-card.featured {
+      border: 2px solid transparent;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        var(--grad-cta) border-box;
+      box-shadow: var(--shadow-lg);
+      transform: scale(1.03);
+    }
+    .price-card.featured:hover { transform: scale(1.04) translateY(-6px); }
+    .popular-tag {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--grad-cta);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 6px 18px;
+      border-radius: 999px;
+      box-shadow: 0 6px 16px rgba(220, 20, 60, 0.35);
+      white-space: nowrap;
+    }
+    .save-tag {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 16px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .price-card .plan-name { font-family: var(--font-head); font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+    .price-card .plan-desc { font-size: 14px; color: var(--ink-soft); margin-bottom: 22px; }
+    .price-card .price { display: flex; align-items: baseline; gap: 6px; margin-bottom: 26px; }
+    .price-card .price .amount { font-family: var(--font-head); font-size: 44px; font-weight: 800; letter-spacing: -0.03em; }
+    .price-card .price .period { font-size: 15px; color: var(--ink-soft); font-weight: 500; }
+    .price-card ul { flex: 1; margin-bottom: 30px; }
+    .price-card li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 8px 0;
+      font-size: 15px;
+      color: var(--ink-soft);
+    }
+    .price-card li svg { flex-shrink: 0; margin-top: 3px; }
+    .price-card .btn { width: 100%; }
+
+    /* ============================================================
+       DEPOIMENTOS
+       ============================================================ */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 26px;
+    }
+    .testimonial {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 34px 30px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .testimonial:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+    .testimonial .stars { color: var(--gold); font-size: 17px; letter-spacing: 3px; margin-bottom: 16px; }
+    .testimonial blockquote { flex: 1; font-size: 16px; color: var(--ink); font-style: italic; margin-bottom: 22px; }
+    .testimonial .who { display: flex; align-items: center; gap: 13px; }
+    .testimonial .who .avatar {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--crimson), var(--gold));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 17px;
+    }
+    .testimonial .who .name { font-weight: 700; font-size: 15px; }
+    .testimonial .who .role { font-size: 13.5px; color: var(--ink-soft); }
+
+    /* ============================================================
+       FAQ
+       ============================================================ */
+    .faq-list { max-width: 760px; margin: 0 auto; }
+    .faq-item {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      overflow: hidden;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .faq-item.open { border-color: rgba(220, 20, 60, 0.3); box-shadow: var(--shadow-sm); }
+    .faq-q {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      text-align: left;
+      font-family: var(--font-head);
+      font-size: 16.5px;
+      font-weight: 700;
+      color: var(--ink);
+      padding: 22px 26px;
+    }
+    .faq-q .chev {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(220, 20, 60, 0.07);
+      display: grid;
+      place-items: center;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease;
+    }
+    .faq-item.open .faq-q .chev { transform: rotate(180deg); background: rgba(220, 20, 60, 0.14); }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .faq-a p { padding: 0 26px 24px; color: var(--ink-soft); font-size: 15.5px; }
+
+    /* ============================================================
+       CTA FINAL
+       ============================================================ */
+    .final-cta {
+      background:
+        radial-gradient(700px 400px at 20% 0%, rgba(212, 160, 23, 0.16), transparent 60%),
+        radial-gradient(700px 420px at 85% 100%, rgba(220, 20, 60, 0.22), transparent 60%),
+        var(--bg-dark);
+      color: #fff;
+      text-align: center;
+      padding: 110px 0;
+    }
+    .final-cta h2 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 800; max-width: 720px; margin: 0 auto 18px; }
+    .final-cta h2 .gold-text { color: var(--gold-soft); }
+    .final-cta .sub { font-size: 19px; color: rgba(255, 255, 255, 0.7); margin-bottom: 38px; }
+    .final-cta .micro { margin-top: 20px; font-size: 14px; color: rgba(255, 255, 255, 0.55); }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      background: #0e0e17;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 56px 0 32px;
+      font-size: 14.5px;
+    }
+    .footer-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    footer .logo { color: #fff; }
+    footer .foot-desc { max-width: 300px; margin-top: 12px; font-size: 14px; }
+    .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+    .footer-links a { transition: color 0.2s ease; }
+    .footer-links a:hover { color: var(--gold-soft); }
+    .footer-wa {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--whatsapp);
+      font-weight: 600;
+      background: rgba(37, 211, 102, 0.08);
+      border: 1px solid rgba(37, 211, 102, 0.25);
+      padding: 10px 18px;
+      border-radius: 999px;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .footer-wa:hover { background: rgba(37, 211, 102, 0.16); transform: translateY(-2px); }
+    .footer-bottom {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 28px;
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    /* ============================================================
+       RESPONSIVO
+       ============================================================ */
+    @media (max-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; }
+      .hero-grid { gap: 40px; }
+    }
+
+    @media (max-width: 900px) {
+      section { padding: 72px 0; }
+      .nav-links, .nav-cta .btn-ghost { display: none; }
+      .hamburger { display: flex; }
+      .nav-cta .btn-primary { padding: 10px 18px; font-size: 14px; }
+
+      .hero { padding: 130px 0 80px; }
+      .hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .hero .sub { margin-left: auto; margin-right: auto; }
+      .hero-ctas { justify-content: center; }
+      .hero-trust { justify-content: center; }
+      .hero-visual { margin-top: 16px; transform: scale(0.92); }
+
+      .ba-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .demo-grid { grid-template-columns: 1fr; gap: 44px; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto; }
+      .price-card.featured { transform: none; }
+      .price-card.featured:hover { transform: translateY(-6px); }
+      .testimonials-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+    }
+
+    @media (max-width: 560px) {
+      body { font-size: 16px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero-visual { transform: scale(0.8); margin: -20px -30px; }
+      .flow-arrow { width: 60px; margin: 0 -22px; }
+      .phone-frame { width: 290px; }
+      .btn-lg { width: 100%; }
+      .hero-ctas .btn { width: 100%; }
+      .footer-grid { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVBAR
+       ============================================================ -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="#" class="logo" aria-label="Açougue Inteligente — início">
+        <span class="logo-emoji" aria-hidden="true">🥩</span>
+        <span>Açougue <span class="gold">Inteligente</span></span>
+      </a>
+
+      <nav class="nav-links" aria-label="Navegação principal">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#funcionalidades">Funcionalidades</a>
+        <a href="#precos">Preços</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="nav-cta">
+        <a href="#precos" class="btn btn-primary">Começar grátis</a>
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Menu mobile -->
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Menu de navegação">
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#funcionalidades">Funcionalidades</a>
+    <a href="#precos">Preços</a>
+    <a href="#faq">FAQ</a>
+    <a href="#precos" class="btn btn-primary btn-lg">Começar grátis</a>
+  </div>
+
+  <main>
+    <!-- ============================================================
+         1. HERO
+         ============================================================ -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero-grid">
+        <div>
+          <span class="hero-badge reveal">
+            <span class="dot" aria-hidden="true"></span>
+            Sem cartão de crédito · Setup em 5 minutos
+          </span>
+          <h1 id="hero-title" class="reveal d1">
+            Seu açougue recebendo pedidos <span class="hl">no automático</span>, 24h por dia.
+          </h1>
+          <p class="sub reveal d2">
+            O cliente manda mensagem no seu WhatsApp, a inteligência artificial entende o pedido,
+            confirma com ele e a comanda já sai impressa no balcão. Você só corta a carne.
+          </p>
+          <div class="hero-ctas reveal d3">
+            <a href="#precos" class="btn btn-primary btn-lg btn-pulse">Teste grátis por 14 dias</a>
+            <a href="#como-funciona" class="btn btn-ghost btn-lg">Veja como funciona ↓</a>
+          </div>
+          <p class="hero-trust reveal d4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Cancele quando quiser. Sem fidelidade, sem multa.
+          </p>
+        </div>
+
+        <!-- Ilustração: WhatsApp → comanda impressa -->
+        <div class="hero-visual reveal d2" aria-hidden="true">
+          <div class="mini-phone">
+            <div class="screen">
+              <div class="wa-bar">
+                <span class="avatar">🥩</span> Açougue do Zé
+              </div>
+              <div class="chat">
+                <div class="bubble out">Quero 2kg de picanha pra retirar às 18h 👍</div>
+                <div class="bubble in">Fechado! 🥩 2 kg de Picanha, retirada às 18:00. Posso confirmar?</div>
+                <div class="bubble out">Pode sim!</div>
+                <div class="bubble in">Pedido #42 confirmado ✅</div>
+              </div>
+            </div>
+          </div>
+
+          <svg class="flow-arrow" viewBox="0 0 90 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 20 H72" stroke="url(#arrowGrad)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 9" />
+            <path d="M68 8 L86 20 L68 32" stroke="url(#arrowGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <defs>
+              <linearGradient id="arrowGrad" x1="0" y1="0" x2="90" y2="0" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#DC143C" />
+                <stop offset="1" stop-color="#D4A017" />
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <div class="receipt">
+            <div class="r-title">AÇOUGUE DO ZÉ</div>
+            <div class="r-sep"></div>
+            <div class="r-row r-big"><span>PEDIDO</span><span>#42</span></div>
+            <div class="r-row"><span>Cliente:</span><span>João</span></div>
+            <div class="r-row"><span>Retirada:</span><span>18:00</span></div>
+            <div class="r-sep"></div>
+            <div class="r-row"><span>2,0 kg Picanha</span><span>R$ 159,80</span></div>
+            <div class="r-sep"></div>
+            <div class="r-row r-big"><span>TOTAL</span><span>R$ 159,80</span></div>
+            <div class="r-tag">✓ IMPRESSO AUTOMATICAMENTE</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         2. BARRA DE CREDIBILIDADE
+         ============================================================ -->
+    <section class="stats" id="stats" aria-label="Números da plataforma">
+      <div class="container stats-grid">
+        <div class="stat reveal">
+          <div class="stat-icon" aria-hidden="true">📦</div>
+          <div class="stat-num"><span class="counter" data-target="500" data-suffix="+">0</span></div>
+          <div class="stat-label">pedidos processados</div>
+        </div>
+        <div class="stat reveal d1">
+          <div class="stat-icon" aria-hidden="true">🎯</div>
+          <div class="stat-num"><span class="counter" data-target="98" data-suffix="%">0</span></div>
+          <div class="stat-label">de precisão da IA</div>
+        </div>
+        <div class="stat reveal d2">
+          <div class="stat-icon" aria-hidden="true">⚡</div>
+          <div class="stat-num">&lt;<span class="counter" data-target="3" data-suffix="s">0</span></div>
+          <div class="stat-label">tempo de resposta</div>
+        </div>
+        <div class="stat reveal d3">
+          <div class="stat-icon" aria-hidden="true">🕐</div>
+          <div class="stat-num"><span class="counter" data-target="24" data-suffix="h">0</span>/7</div>
+          <div class="stat-label">funcionando sem parar</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         3. PROBLEMA → SOLUÇÃO
+         ============================================================ -->
+    <section id="antes-depois" aria-labelledby="ba-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">O problema é real</span>
+          <h2 id="ba-title">Quantos pedidos você perdeu hoje<br />enquanto cortava carne?</h2>
+          <p>Cada mensagem sem resposta é um cliente comprando no concorrente. Veja a diferença:</p>
+        </div>
+
+        <div class="ba-grid">
+          <div class="ba-card before reveal">
+            <span class="ba-tag">❌ Antes</span>
+            <h3>Sem o Açougue Inteligente</h3>
+            <ul>
+              <li><span class="mark">❌</span> Pedidos perdidos no WhatsApp enquanto você corta carne</li>
+              <li><span class="mark">❌</span> Cliente esperando resposta… e desistindo</li>
+              <li><span class="mark">❌</span> Anotação em papel ilegível, pedido errado</li>
+              <li><span class="mark">❌</span> Sem controle nenhum de faturamento</li>
+              <li><span class="mark">❌</span> Funcionário dedicado só para atender WhatsApp</li>
+            </ul>
+          </div>
+
+          <div class="ba-card after reveal d2">
+            <span class="ba-tag">✅ Depois</span>
+            <h3>Com o <span class="gold-text">Açougue Inteligente</span></h3>
+            <ul>
+              <li><span class="mark">✅</span> IA responde todo pedido em segundos, 24h por dia</li>
+              <li><span class="mark">✅</span> Comanda impressa direto na térmica, sem erro</li>
+              <li><span class="mark">✅</span> Painel com todos os pedidos organizados em tempo real</li>
+              <li><span class="mark">✅</span> Relatórios de faturamento e produtos mais vendidos</li>
+              <li><span class="mark">✅</span> Você foca no que sabe fazer: cortar carne</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         4. COMO FUNCIONA
+         ============================================================ -->
+    <section id="como-funciona" class="alt" aria-labelledby="hiw-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Simples assim</span>
+          <h2 id="hiw-title">Como funciona, em 3 passos</h2>
+          <p>Nada de app novo, nada de treinamento. Se o seu cliente sabe mandar mensagem, já sabe usar.</p>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card reveal">
+            <span class="step-num" aria-hidden="true">1</span>
+            <div class="step-icon" aria-hidden="true">💬</div>
+            <h3>O cliente pede pelo WhatsApp</h3>
+            <p>Seu cliente manda uma mensagem normal, do jeito dele. A IA entende tudo — quantidade, corte e horário.</p>
+            <p class="ex">“Quero 1kg de picanha e meio quilo de linguiça pra pegar às 18h”</p>
+          </article>
+
+          <article class="step-card reveal d1">
+            <span class="step-num" aria-hidden="true">2</span>
+            <div class="step-icon" aria-hidden="true">🤖</div>
+            <h3>A IA confirma e cria o pedido</h3>
+            <p>Em segundos, a IA responde com o resumo e pede confirmação. Confirmou? O pedido é criado e a comanda sai na impressora térmica do balcão.</p>
+          </article>
+
+          <article class="step-card reveal d2">
+            <span class="step-num" aria-hidden="true">3</span>
+            <div class="step-icon" aria-hidden="true">📊</div>
+            <h3>Você acompanha no painel</h3>
+            <p>Veja todos os pedidos em tempo real: em preparo, prontos e concluídos. Marcou como pronto? O cliente é avisado automaticamente no WhatsApp.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         5. FUNCIONALIDADES
+         ============================================================ -->
+    <section id="funcionalidades" aria-labelledby="feat-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Tudo incluso</span>
+          <h2 id="feat-title">Feito sob medida para o balcão do açougue</h2>
+          <p>Cada funcionalidade resolve um problema real de quem vende carne todo dia.</p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card reveal">
+            <div class="f-icon" aria-hidden="true">🤖</div>
+            <h3>IA que entende português</h3>
+            <p>“Meio quilo”, “um frango inteiro”, “2 bandejas de coração”… a IA entende tudo, do jeito que o cliente fala.</p>
+          </article>
+
+          <article class="feature-card reveal d1">
+            <div class="f-icon" aria-hidden="true">📱</div>
+            <h3>WhatsApp — o app que o cliente já usa</h3>
+            <p>Sem instalar nada. Sem app novo. Sem cadastro. O cliente só manda mensagem.</p>
+          </article>
+
+          <article class="feature-card reveal d2">
+            <div class="f-icon" aria-hidden="true">🖨️</div>
+            <h3>Comanda impressa automática</h3>
+            <p>Sai na térmica do balcão com nome, itens, horário de retirada e número do pedido.</p>
+          </article>
+
+          <article class="feature-card reveal d3">
+            <div class="f-icon" aria-hidden="true">📊</div>
+            <h3>Painel em tempo real</h3>
+            <p>Pedidos organizados por status. Novos pedidos aparecem na hora, sem recarregar a página.</p>
+          </article>
+
+          <article class="feature-card reveal">
+            <div class="f-icon" aria-hidden="true">🔔</div>
+            <h3>Notificação ao cliente</h3>
+            <p>Marcou como pronto? O cliente recebe na hora: “Seu pedido #42 está pronto para retirada!”</p>
+          </article>
+
+          <article class="feature-card reveal d1">
+            <div class="f-icon" aria-hidden="true">💰</div>
+            <h3>Relatórios e faturamento</h3>
+            <p>Saiba quanto vendeu hoje, qual o ticket médio e quais são os cortes mais pedidos.</p>
+          </article>
+
+          <article class="feature-card reveal d2">
+            <div class="f-icon" aria-hidden="true">🏪</div>
+            <h3>Várias lojas, um sistema</h3>
+            <p>Cada açougue tem seu painel separado e seguro. Perfeito para redes e franquias.</p>
+          </article>
+
+          <article class="feature-card reveal d3">
+            <div class="f-icon" aria-hidden="true">🛡️</div>
+            <h3>Atendente sempre de plantão</h3>
+            <p>Se a IA não entender algo, ela encaminha para você ou seu atendente. Você nunca perde o cliente.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         6. DEMONSTRAÇÃO
+         ============================================================ -->
+    <section class="demo" id="demo" aria-labelledby="demo-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Veja na prática</span>
+          <h2 id="demo-title">Do “quero 2kg de picanha”<br />até a comanda no balcão</h2>
+          <p>Uma conversa real com a IA — e o pedido aparecendo no seu painel ao mesmo tempo.</p>
+        </div>
+
+        <div class="demo-grid">
+          <!-- Mockup do celular com conversa animada -->
+          <div class="reveal">
+            <div class="phone-frame" role="img" aria-label="Simulação de conversa no WhatsApp entre cliente e o Açougue Inteligente">
+              <div class="phone-screen">
+                <div class="wa-header">
+                  <div class="avatar" aria-hidden="true">🥩</div>
+                  <div>
+                    <div class="wa-name">Açougue do Zé</div>
+                    <div class="wa-status">online · responde em segundos</div>
+                  </div>
+                </div>
+
+                <div class="wa-chat" id="waChat">
+                  <div class="wa-msg from-client" data-step="0">Boa tarde! Quero 2kg de picanha, 1kg de fraldinha e meio quilo de linguiça toscana. Pego às 18h<span class="msg-time">17:02</span></div>
+                  <div class="typing" id="waTyping" aria-hidden="true"><i></i><i></i><i></i></div>
+                  <div class="wa-msg from-bot" data-step="1">Oi! Confirmando seu pedido:
+🥩 2 kg — Picanha
+🥩 1 kg — Fraldinha
+🥩 0,5 kg — Linguiça Toscana
+📍 Retirada: 18:00
+
+Posso confirmar?<span class="msg-time">17:02</span></div>
+                  <div class="wa-msg from-client" data-step="2">Sim!<span class="msg-time">17:03</span></div>
+                  <div class="wa-msg from-bot" data-step="3">Pedido #42 confirmado! ✅
+Avisaremos quando estiver pronto. 🥩<span class="msg-time">17:03</span></div>
+                </div>
+
+                <div class="wa-input" aria-hidden="true">
+                  <div class="fake-field">Mensagem</div>
+                  <div class="send-btn">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mockup do painel -->
+          <div class="reveal d2">
+            <div class="panel-mock" role="img" aria-label="Mockup do painel de pedidos em tempo real">
+              <div class="panel-top">
+                <span class="p-title">🥩 Painel — Açougue do Zé</span>
+                <span class="p-live"><span class="dot"></span> Ao vivo</span>
+              </div>
+              <div class="panel-cols">
+                <div class="panel-col">
+                  <div class="col-label">🔥 Em preparo</div>
+                  <div class="order-card">
+                    <div class="o-head"><span class="o-num">#42</span><span>R$ 247,30</span></div>
+                    <div class="o-items">2kg Picanha · 1kg Fraldinha · 0,5kg Ling. Toscana</div>
+                    <div class="o-foot"><span>João · Retirada 18:00</span><span class="o-badge prep">Em preparo</span></div>
+                  </div>
+                  <div class="order-card">
+                    <div class="o-head"><span class="o-num">#43</span><span>R$ 89,90</span></div>
+                    <div class="o-items">1kg Alcatra · 1 Frango inteiro</div>
+                    <div class="o-foot"><span>Marcia · Retirada 18:30</span><span class="o-badge prep">Em preparo</span></div>
+                  </div>
+                </div>
+                <div class="panel-col">
+                  <div class="col-label">✅ Prontos</div>
+                  <div class="order-card">
+                    <div class="o-head"><span class="o-num">#41</span><span>R$ 132,50</span></div>
+                    <div class="o-items">1,5kg Costela · 0,5kg Coração</div>
+                    <div class="o-foot"><span>Pedro · Retirada 17:45</span><span class="o-badge ready">Pronto ✓</span></div>
+                  </div>
+                  <div class="order-card">
+                    <div class="o-head"><span class="o-num">#40</span><span>R$ 64,00</span></div>
+                    <div class="o-items">0,8kg Maminha</div>
+                    <div class="o-foot"><span>Ana · Retirada 17:30</span><span class="o-badge ready">Pronto ✓</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         7. PREÇOS
+         ============================================================ -->
+    <section id="precos" class="alt" aria-labelledby="price-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Preço justo</span>
+          <h2 id="price-title">Menos que o custo de um funcionário.<br />Trabalhando 24h sem folga.</h2>
+          <p>Comece grátis e só pague quando tiver certeza de que vale a pena.</p>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Trial -->
+          <article class="price-card reveal">
+            <h3 class="plan-name">Trial</h3>
+            <p class="plan-desc">Para você testar tudo, sem risco nenhum.</p>
+            <div class="price"><span class="amount">R$ 0</span><span class="period">/ 14 dias</span></div>
+            <ul>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> 14 dias grátis</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Todas as funcionalidades</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Sem cartão de crédito</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Setup em 5 minutos</li>
+            </ul>
+            <a href="#" class="btn btn-ghost">Começar grátis</a>
+          </article>
+
+          <!-- Mensal (destaque) -->
+          <article class="price-card featured reveal d1">
+            <span class="popular-tag">⭐ Mais popular</span>
+            <h3 class="plan-name">Mensal</h3>
+            <p class="plan-desc">Para o açougue que quer vender mais já.</p>
+            <div class="price"><span class="amount">R$ 247,90</span><span class="period">/mês</span></div>
+            <ul>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Pedidos ilimitados</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> IA atendendo 24h</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Impressão automática de comanda</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Painel completo em tempo real</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Suporte prioritário</li>
+            </ul>
+            <a href="#" class="btn btn-primary">Assinar agora</a>
+          </article>
+
+          <!-- Anual -->
+          <article class="price-card reveal d2">
+            <span class="save-tag">💰 Economize R$ 495,80</span>
+            <h3 class="plan-name">Anual</h3>
+            <p class="plan-desc">O melhor custo-benefício para quem já decidiu.</p>
+            <div class="price"><span class="amount">R$ 2.479</span><span class="period">/ano</span></div>
+            <ul>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Tudo do plano Mensal</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> 2 meses grátis</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Onboarding dedicado</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Preço travado por 12 meses</li>
+            </ul>
+            <a href="#" class="btn btn-ghost">Melhor custo-benefício</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         8. DEPOIMENTOS
+         ============================================================ -->
+    <section id="depoimentos" aria-labelledby="dep-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Quem usa, recomenda</span>
+          <h2 id="dep-title">Açougueiros de verdade, resultados de verdade</h2>
+        </div>
+
+        <div class="testimonials-grid">
+          <article class="testimonial reveal">
+            <div class="stars" aria-label="5 de 5 estrelas">★★★★★</div>
+            <blockquote>“Antes eu perdia uns 10 pedidos por dia porque não dava pra atender WhatsApp e cortar carne ao mesmo tempo. Agora a IA faz tudo e a comanda já sai pronta.”</blockquote>
+            <div class="who">
+              <div class="avatar" aria-hidden="true">CS</div>
+              <div>
+                <div class="name">Carlos Silva</div>
+                <div class="role">Açougue do Carlos — São Paulo, SP</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="testimonial reveal d1">
+            <div class="stars" aria-label="5 de 5 estrelas">★★★★★</div>
+            <blockquote>“Meus clientes adoram. Mandam o pedido de casa e só passam pra retirar. O movimento aumentou uns 30%.”</blockquote>
+            <div class="who">
+              <div class="avatar" aria-hidden="true">RM</div>
+              <div>
+                <div class="name">Roberto Mendes</div>
+                <div class="role">Casa de Carnes Mendes — Belo Horizonte, MG</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="testimonial reveal d2">
+            <div class="stars" aria-label="5 de 5 estrelas">★★★★★</div>
+            <blockquote>“Achei que IA era coisa complicada, mas foi ligar o WhatsApp e pronto. Em 5 minutos tava funcionando.”</blockquote>
+            <div class="who">
+              <div class="avatar" aria-hidden="true">DM</div>
+              <div>
+                <div class="name">Dona Maria</div>
+                <div class="role">Açougue da Maria — Rio de Janeiro, RJ</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         9. FAQ
+         ============================================================ -->
+    <section id="faq" class="alt" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Dúvidas comuns</span>
+          <h2 id="faq-title">Perguntas frequentes</h2>
+          <p>Não achou sua resposta? Chama a gente no WhatsApp que respondemos na hora.</p>
+        </div>
+
+        <div class="faq-list reveal">
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false">
+              Preciso instalar algum app?
+              <span class="chev" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC143C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="faq-a"><p>Não. Funciona pelo WhatsApp que você já usa. O painel você acessa pelo navegador, no computador ou no celular.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false">
+              E se a IA errar o pedido?
+              <span class="chev" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC143C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="faq-a"><p>A IA sempre confirma com o cliente antes de criar o pedido. Se ela não entender alguma coisa, encaminha para um atendente humano — você nunca perde a venda.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false">
+              Funciona com qualquer impressora?
+              <span class="chev" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC143C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="faq-a"><p>Sim, qualquer impressora térmica compatível com PrintNode — a grande maioria das térmicas USB vendidas no mercado.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false">
+              Posso cancelar quando quiser?
+              <span class="chev" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC143C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="faq-a"><p>Sim. Sem multa, sem fidelidade. Você cancela direto pelo painel, em dois cliques.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false">
+              Meus dados ficam seguros?
+              <span class="chev" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC143C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="faq-a"><p>Sim. Seus dados ficam em banco de dados com criptografia e cada açougue só acessa os próprios pedidos e clientes — totalmente separado dos demais.</p></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q" aria-expanded="false">
+              E se o WhatsApp cair?
+              <span class="chev" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC143C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="faq-a"><p>Os pedidos que já entraram ficam salvos no painel, nada se perde. Quando o WhatsApp voltar, a IA continua de onde parou.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         10. CTA FINAL
+         ============================================================ -->
+    <section class="final-cta" aria-labelledby="cta-title">
+      <div class="container">
+        <h2 id="cta-title" class="reveal">Seu concorrente já está automatizando.<br /><span class="gold-text">E você?</span></h2>
+        <p class="sub reveal d1">Comece hoje mesmo. 14 dias grátis, sem cartão, sem compromisso.</p>
+        <div class="reveal d2">
+          <a href="#precos" class="btn btn-primary btn-lg btn-pulse">Quero testar grátis agora →</a>
+        </div>
+        <p class="micro reveal d3">Setup em menos de 5 minutos · Suporte por WhatsApp</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================
+       11. FOOTER
+       ============================================================ -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="#" class="logo" aria-label="Açougue Inteligente — voltar ao topo">
+            <span class="logo-emoji" aria-hidden="true">🥩</span>
+            <span>Açougue <span class="gold">Inteligente</span></span>
+          </a>
+          <p class="foot-desc">A inteligência artificial que atende o WhatsApp do seu açougue e imprime a comanda no balcão. 24 horas por dia.</p>
+        </div>
+
+        <nav class="footer-links" aria-label="Links do rodapé">
+          <a href="#">Termos de uso</a>
+          <a href="#">Privacidade</a>
+          <a href="#">Contato</a>
+        </nav>
+
+        <a href="https://wa.me/5500000000000" target="_blank" rel="noopener noreferrer" class="footer-wa" aria-label="Falar com o suporte pelo WhatsApp">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.497.1-.198.05-.371-.025-.52-.074-.149-.668-1.612-.916-2.207-.241-.579-.486-.5-.668-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.064 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.57-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.36-.214-3.742.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Suporte por WhatsApp
+        </a>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 Açougue Inteligente. Todos os direitos reservados.</span>
+        <span>Feito com ❤️ no Brasil 🇧🇷</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ============================================================
+         NAVBAR — sombra ao rolar
+         ============================================================ */
+      var navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', function () {
+        navbar.classList.toggle('scrolled', window.scrollY > 10);
+      }, { passive: true });
+
+      /* ============================================================
+         MENU MOBILE
+         ============================================================ */
+      var hamburger = document.getElementById('hamburger');
+      var mobileMenu = document.getElementById('mobileMenu');
+
+      function toggleMenu(force) {
+        var open = typeof force === 'boolean' ? force : !mobileMenu.classList.contains('open');
+        mobileMenu.classList.toggle('open', open);
+        hamburger.classList.toggle('open', open);
+        hamburger.setAttribute('aria-expanded', String(open));
+        hamburger.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+        document.body.style.overflow = open ? 'hidden' : '';
+      }
+
+      hamburger.addEventListener('click', function () { toggleMenu(); });
+      mobileMenu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () { toggleMenu(false); });
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && mobileMenu.classList.contains('open')) toggleMenu(false);
+      });
+
+      /* ============================================================
+         SCROLL REVEAL (IntersectionObserver)
+         ============================================================ */
+      var revealObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+      document.querySelectorAll('.reveal').forEach(function (el) {
+        revealObserver.observe(el);
+      });
+
+      /* ============================================================
+         CONTADORES ANIMADOS
+         ============================================================ */
+      function animateCounter(el) {
+        var target = parseInt(el.dataset.target, 10);
+        var suffix = el.dataset.suffix || '';
+        var duration = 1600;
+        var start = null;
+
+        function tick(ts) {
+          if (!start) start = ts;
+          var progress = Math.min((ts - start) / duration, 1);
+          // easeOutCubic
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.round(eased * target) + suffix;
+          if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      var counterObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.6 });
+
+      document.querySelectorAll('.counter').forEach(function (el) {
+        counterObserver.observe(el);
+      });
+
+      /* ============================================================
+         CONVERSA DE WHATSAPP ANIMADA
+         ============================================================ */
+      var waChat = document.getElementById('waChat');
+      var waTyping = document.getElementById('waTyping');
+      var waMessages = Array.prototype.slice.call(waChat.querySelectorAll('.wa-msg'));
+      var chatStarted = false;
+
+      function showTyping(show) {
+        waTyping.classList.toggle('shown', show);
+        if (show) waChat.scrollTop = waChat.scrollHeight;
+      }
+
+      function playChat() {
+        if (chatStarted) return;
+        chatStarted = true;
+
+        var sequence = [
+          { step: 0, delay: 500 },                     // cliente faz o pedido
+          { typing: true, delay: 700 },                // IA "digitando"
+          { step: 1, delay: 1900, hideTyping: true },  // IA confirma
+          { step: 2, delay: 1400 },                    // cliente: "Sim!"
+          { typing: true, delay: 600 },
+          { step: 3, delay: 1300, hideTyping: true }   // pedido confirmado
+        ];
+
+        var elapsed = 0;
+        sequence.forEach(function (item) {
+          elapsed += item.delay;
+          setTimeout(function () {
+            if (item.typing) {
+              showTyping(true);
+              return;
+            }
+            if (item.hideTyping) showTyping(false);
+            var msg = waMessages[item.step];
+            if (msg) {
+              msg.classList.add('shown');
+              waChat.scrollTop = waChat.scrollHeight;
+            }
+          }, elapsed);
+        });
+      }
+
+      var chatObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            playChat();
+            chatObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.45 });
+
+      chatObserver.observe(waChat);
+
+      /* ============================================================
+         FAQ ACORDEÃO
+         ============================================================ */
+      document.querySelectorAll('.faq-item').forEach(function (item) {
+        var btn = item.querySelector('.faq-q');
+        var answer = item.querySelector('.faq-a');
+
+        btn.addEventListener('click', function () {
+          var isOpen = item.classList.contains('open');
+
+          // Fecha os outros
+          document.querySelectorAll('.faq-item.open').forEach(function (other) {
+            if (other !== item) {
+              other.classList.remove('open');
+              other.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+              other.querySelector('.faq-a').style.maxHeight = '0';
+            }
+          });
+
+          item.classList.toggle('open', !isOpen);
+          btn.setAttribute('aria-expanded', String(!isOpen));
+          answer.style.maxHeight = isOpen ? '0' : answer.scrollHeight + 'px';
+        });
+      });
+
+      /* ============================================================
+         ANO DINÂMICO NO FOOTER (mantém o copyright atualizado)
+         ============================================================ */
+      var year = new Date().getFullYear();
+      var copyEl = document.querySelector('.footer-bottom span');
+      if (copyEl && year > 2026) {
+        copyEl.textContent = '© ' + year + ' Açougue Inteligente. Todos os direitos reservados.';
+      }
+    })();
+  </script>
+</body>
+</html>

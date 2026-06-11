@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { enviarTexto, normalizarTelefone } from "@/server/services/evolution";
+import {
+  delayHumanizado,
+  enviarTexto,
+  normalizarTelefone,
+} from "@/server/services/evolution";
 import { processarMensagem } from "@/server/services/conversa";
 import { dispararWebhook, verificarChaveInterna } from "@/server/services/n8n";
 import { ExternalApiError } from "@/server/services/http";
@@ -92,6 +96,9 @@ export async function POST(request: Request) {
   // Evolution estiver indisponível; o painel ainda reflete o estado).
   if (resultado.resposta && !resultado.duplicada) {
     try {
+      // Atraso que imita digitação humana, para reduzir o risco de ban do
+      // número na Evolution API (não oficial). Veja `delayHumanizado`.
+      await delayHumanizado(resultado.resposta);
       await enviarTexto(telefoneCliente, resultado.resposta);
     } catch (e) {
       console.error("[/api/n8n/mensagem] falha ao enviar resposta:", e);
