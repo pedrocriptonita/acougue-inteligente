@@ -110,6 +110,8 @@ export type ContextoConversa = {
   rascunhoAtual?: PedidoInterpretado | null;
   /** A conversa está aguardando o cliente confirmar um pedido já resumido? */
   aguardandoConfirmacao?: boolean;
+  /** Catálogo da loja — ajuda a IA a normalizar nomes de produto. */
+  catalogo?: { nome: string; sinonimos: string[] }[];
   /** Histórico opcional (ex.: últimas trocas), do mais antigo ao mais recente. */
   historico?: { autor: "cliente" | "loja"; texto: string }[];
 };
@@ -134,6 +136,20 @@ export async function interpretarPedido(
       content: `Rascunho do pedido até agora (JSON): ${JSON.stringify(
         contexto.rascunhoAtual
       )}. Atualize-o com a nova mensagem do cliente, sem descartar o que já estava correto.`,
+    });
+  }
+
+  if (contexto.catalogo && contexto.catalogo.length > 0) {
+    const lista = contexto.catalogo
+      .map((p) =>
+        p.sinonimos.length > 0
+          ? `${p.nome} (também: ${p.sinonimos.join(", ")})`
+          : p.nome
+      )
+      .join("; ");
+    messages.push({
+      role: "system",
+      content: `Catálogo de produtos desta loja: ${lista}. Ao identificar um item, use EXATAMENTE o nome oficial do catálogo correspondente (considere os apelidos entre parênteses). Se o cliente pedir algo que não está no catálogo, registre com o nome que ele disse.`,
     });
   }
 

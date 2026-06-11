@@ -10,13 +10,16 @@ import type { ItemPedidoExtraido } from "./openai";
  *  2. Snapshot dos dados do cliente no pedido + vínculo opcional ao cadastro.
  */
 
+/** Item do pedido com preço unitário opcional (preenchido pelo catálogo). */
+export type NovoItemPedido = ItemPedidoExtraido & { precoUnitario?: number };
+
 export type NovoPedido = {
   lojaId: string;
   nomeCliente: string;
   telefoneCliente: string;
   /** Horário de retirada ("18:00" ou "ao ficar pronto"). */
   retirada: string;
-  itens: ItemPedidoExtraido[];
+  itens: NovoItemPedido[];
 };
 
 export type PedidoComItens = Pedido & {
@@ -78,6 +81,7 @@ export async function criarPedido(input: NovoPedido): Promise<PedidoComItens> {
             produto: item.produto,
             quantidade: item.quantidade,
             unidade: item.unidade,
+            precoUnitario: item.precoUnitario ?? null,
           })),
         },
       },

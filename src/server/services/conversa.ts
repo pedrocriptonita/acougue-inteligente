@@ -4,11 +4,33 @@ import { prisma } from "@/lib/prisma";
 
 import { imprimirComanda } from "./printnode";
 import { criarPedido, marcarImpresso } from "./pedido";
+import { listarProdutosAtivos } from "./produto";
 import {
   interpretarPedido,
   pedidoInterpretadoSchema,
   type PedidoInterpretado,
 } from "./openai";
+
+/** Produto do catálogo no formato usado para casar preço. */
+type ProdutoCatalogo = {
+  nome: string;
+  preco: number;
+  sinonimos: string[];
+};
+
+/** Preço unitário do catálogo para um item (por nome ou sinônimo), ou undefined. */
+function precoDoCatalogo(
+  nomeItem: string,
+  catalogo: ProdutoCatalogo[]
+): number | undefined {
+  const alvo = nomeItem.trim().toLowerCase();
+  const achado = catalogo.find(
+    (p) =>
+      p.nome.toLowerCase() === alvo ||
+      p.sinonimos.some((s) => s.toLowerCase() === alvo)
+  );
+  return achado?.preco;
+}
 
 /**
  * Orquestrador da conversa (o "cérebro" da automação).
@@ -107,9 +129,19 @@ export async function processarMensagem(
     conversa?.statusConversa === StatusConversa.AGUARDANDO_CONFIRMACAO;
   const tentativasAnteriores = emColeta ? (conversa?.tentativas ?? 0) : 0;
 
+  // Catálogo da loja: normaliza nomes na IA e preenche o preço estimado.
+  const catalogo: ProdutoCatalogo[] = (
+    await listarProdutosAtivos(loja.id)
+  ).map((p) => ({
+    nome: p.nome,
+    preco: Number(p.preco),
+    sinonimos: p.sinonimos,
+  }));
+
   const r = await interpretarPedido(texto, {
     rascunhoAtual,
     aguardandoConfirmacao,
+    catalogo: catalogo.map((p) => ({ nome: p.nome, sinonimos: p.sinonimos })),
   });
 
   // 4. Fallback explícito pedido pela IA.
@@ -135,7 +167,11 @@ export async function processarMensagem(
       nomeCliente,
       telefoneCliente: telefone,
       retirada: r.retirada ?? "ao ficar pronto",
-      itens: r.itens,
+      // Casa cada item com o catálogo para preencher o preço estimado.
+      itens: r.itens.map((item) => ({
+        ...item,
+        precoUnitario: precoDoCatalogo(item.produto, catalogo),
+      })),
     });
 
     // Impressão é "best effort": o pedido já existe (painel é a fonte da
