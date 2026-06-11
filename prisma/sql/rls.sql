@@ -50,6 +50,7 @@ alter table public.clientes     enable row level security;
 alter table public.pedidos      enable row level security;
 alter table public.itens_pedido enable row level security;
 alter table public.conversas    enable row level security;
+alter table public.produtos     enable row level security;
 
 -- Garante reexecução idempotente: derruba políticas antigas antes de recriar.
 drop policy if exists loja_isolada        on public.lojas;
@@ -58,6 +59,7 @@ drop policy if exists clientes_isolados   on public.clientes;
 drop policy if exists pedidos_isolados    on public.pedidos;
 drop policy if exists itens_isolados      on public.itens_pedido;
 drop policy if exists conversas_isoladas  on public.conversas;
+drop policy if exists produtos_isolados   on public.produtos;
 
 -- ----------------------------------------------------------------------------
 --  Políticas (FOR ALL = select/insert/update/delete) escopadas por loja.
@@ -84,6 +86,11 @@ create policy pedidos_isolados on public.pedidos
   with check (loja_id = public.auth_loja_id());
 
 create policy conversas_isoladas on public.conversas
+  for all to authenticated
+  using (loja_id = public.auth_loja_id())
+  with check (loja_id = public.auth_loja_id());
+
+create policy produtos_isolados on public.produtos
   for all to authenticated
   using (loja_id = public.auth_loja_id())
   with check (loja_id = public.auth_loja_id());

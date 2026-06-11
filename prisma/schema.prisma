@@ -99,6 +99,7 @@ model Loja {
   clientes  Cliente[]
   pedidos   Pedido[]
   conversas Conversa[]
+  produtos  Produto[]
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -154,6 +155,33 @@ model Cliente {
   @@index([lojaId])
   @@index([deletedAt])
   @@map("clientes")
+}
+
+/// Catálogo de produtos da loja (cortes/itens à venda com preço).
+/// Alimenta a IA (contexto no prompt) e o preço estimado dos pedidos.
+/// NÃO há FK do ItemPedido para cá — o pedido guarda um snapshot do nome/preço,
+/// então editar/remover um Produto não afeta pedidos passados.
+model Produto {
+  id      String        @id @default(uuid()) @db.Uuid
+  lojaId  String        @map("loja_id") @db.Uuid
+  nome    String
+  /// Preço por unidade de medida (por kg quando KG; por peça quando PECA).
+  preco   Decimal       @db.Decimal(10, 2)
+  unidade UnidadeMedida @default(KG)
+  /// Nomes alternativos que o cliente pode usar (ajuda a IA a casar o item).
+  sinonimos String[]    @default([])
+  /// Produto temporariamente fora de venda (não some do catálogo).
+  ativo   Boolean       @default(true)
+
+  loja Loja @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Nome único por loja (evita catálogo duplicado).
+  @@unique([lojaId, nome])
+  @@index([lojaId])
+  @@map("produtos")
 }
 
 /// Pedido de carnes para retirada no balcão.

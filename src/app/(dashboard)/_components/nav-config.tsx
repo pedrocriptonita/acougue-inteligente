@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Beef,
   type LucideIcon,
   MessageSquare,
   Package,
@@ -19,6 +20,7 @@ export type NavLink = {
 export const navLinks: NavLink[] = [
   { href: "/dashboard", label: "Pedidos", icon: Package, exact: true },
   { href: "/dashboard/relatorio", label: "Relatório", icon: BarChart3 },
+  { href: "/dashboard/produtos", label: "Produtos", icon: Beef },
   { href: "/dashboard/clientes", label: "Clientes", icon: Users },
   { href: "/dashboard/conversas", label: "Conversas", icon: MessageSquare },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
